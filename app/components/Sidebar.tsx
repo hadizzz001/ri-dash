@@ -30,32 +30,47 @@ export default function Sidebar() {
           <h3 style={{ textAlign: "center" }}>Dashboard</h3>
           <ul style={{ padding: 0, marginTop: "20px", listStyle: "none" }}>
             <li style={{ marginBottom: "15px" }}>
-              <a href="/dashboard" style={{ color: "white", textDecoration: "none" }}>
+              <a href="/dashboard" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
                 All Products
               </a>
             </li>
             <li>
-              <a href="/products" style={{ color: "white", textDecoration: "none" }}>
+              <a href="/products" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
                 Add Product
-              </a>
-            </li>
-            <li>
-              <a href="/category" style={{ color: "white", textDecoration: "none" }}>
-                Add Category
               </a>
             </li>    
             <li>
-              <a href="/offer" style={{ color: "white", textDecoration: "none" }}>
-                Add Code
+              <a href="/service" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
+                Add Service
               </a>
             </li>  
             <li>
-              <a href="/reservation" style={{ color: "white", textDecoration: "none" }}>
+              <a href="/ext" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
+                Add Extension
+              </a>
+            </li>  
+            <li>
+              <a href="/vid" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
+                Add Video
+              </a>
+            </li>  
+            <li>
+              <a href="/app1" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
+                Manage Appointments
+              </a>
+            </li>  
+            <li>
+              <a href="/app2" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
+                View Appointments
+              </a>
+            </li>  
+            <li>
+              <a href="/reservation" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
                 Orders
               </a>
             </li> 
             <li>
-              <a href="/" style={{ color: "white", textDecoration: "none" }}>
+              <a href="/" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
                 Logout
               </a>
             </li>

@@ -10,10 +10,8 @@ export async function POST(req) {
 description,
 price,
 discount,
-img,
-category, 
-stock,
-arrival 
+img, 
+stock, 
       } = body;
 
 console.log("body are: ",body);
@@ -26,10 +24,8 @@ console.log("body are: ",body);
         description,
         price,
         discount,
-        img,
-        category, 
-        stock,
-        arrival 
+        img, 
+        stock, 
           
       },
     });

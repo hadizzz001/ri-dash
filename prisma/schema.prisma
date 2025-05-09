@@ -13,23 +13,32 @@ model Product {
   description String
   price       String
   discount    String
-  img         String[]
-  category    String
-  stock       String
-  arrival     String   @default("no")
+  img         String[] 
+  stock       String 
 }
 
-model Category {
-  id   String   @id @default(auto()) @map("_id") @db.ObjectId
-  name String   @unique
-  img  String[]
+model Service {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String 
+  img         String[]  
 }
 
-model Offer {
-  id   String @id @default(auto()) @map("_id") @db.ObjectId
-  code String
-  per  Int
+model Extension {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String 
+  img         String[]  
 }
+
+model Appointment {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  info       Json  
+}
+
+ 
+
+ 
 
 model Order {
   id        String  @id @default(auto()) @map("_id") @db.ObjectId
@@ -44,9 +53,8 @@ model Order {
   date      String
 }
 
-model Review {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  description String
-  date        DateTime @default(now()) @db.Date
+ 
+model Video {
+  id   String   @id @default(auto()) @map("_id") @db.ObjectId 
+  img  String[]
 }

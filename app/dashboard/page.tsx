@@ -8,17 +8,14 @@ import 'react-quill/dist/quill.snow.css';
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 export default function ProductTable() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]); 
   const [editingProduct, setEditingProduct] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [searchQuery, setSearchQuery] = useState(''); 
  
 
   // Fetch products and categories on load
   useEffect(() => {
-    fetchProducts();
-    fetchCategories();
+    fetchProducts(); 
   }, []);
 
   const fetchProducts = async () => {
@@ -30,16 +27,7 @@ export default function ProductTable() {
       console.error('Failed to fetch products');
     }
   };
-
-  const fetchCategories = async () => {
-    const response = await fetch('/api/category');
-    if (response.ok) {
-      const data = await response.json();
-      setCategories(data);
-    } else {
-      console.error('Failed to fetch categories');
-    }
-  };
+ 
 
   const handleDelete = async (id) => {
     if (confirm('Are you sure you want to delete this product?')) {
@@ -88,31 +76,15 @@ export default function ProductTable() {
     return product.title.toLowerCase().includes(searchQuery.toLowerCase());
   };
 
-  // Filter products by selected category
-  const filterByCategory = (product) => {
-    const isFilteredByCategory = selectedCategory ? product.category === selectedCategory : true;
-    
-    // Log the filtering process for debugging
-    console.log(`Filtering product: ${product.title} | Category: ${product.category} | Selected Category: ${selectedCategory} | Show: ${isFilteredByCategory}`);
-    
-    return isFilteredByCategory;
-  };
+ 
 
   // Apply both search and category filters
   const filteredProducts = products.filter((product) => {
-    return filterBySearch(product) && filterByCategory(product);
+    return filterBySearch(product)  
   });
 
-  // Log the filtered products to check what's being displayed
-  useEffect(() => {
-    console.log("Filtered products:", filteredProducts);
-  }, [filteredProducts]);
-
-
-
-  console.log("data: ", products);
-  
-
+ 
+ 
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -136,21 +108,7 @@ export default function ProductTable() {
         />
       </div>
 
-      {/* Category Filter */}
-      <div className="mb-4">
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="w-full border p-2"
-        >
-          <option value="">Select a category</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.name}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-      </div>
+ 
 
       <table className="table-auto w-full border-collapse border border-gray-200 mb-4">
   <thead>
@@ -159,9 +117,7 @@ export default function ProductTable() {
       <th className="border p-2">Pic</th>
       <th className="border p-2">Price (USD)</th>
       <th className="border p-2">Discount Price (USD)</th>
-      <th className="border p-2">Stock</th>
-      <th className="border p-2">Category</th> 
-      <th className="border p-2">New Arrival</th>
+      <th className="border p-2">Stock</th>  
       <th className="border p-2">Actions</th>
     </tr>
   </thead>
@@ -187,9 +143,7 @@ export default function ProductTable() {
   </td>
   <td className="border p-2">{product.price}</td>
   <td className="border p-2">{product.discount || "N/A"}</td>
-  <td className="border p-2">{product.stock}</td>
-  <td className="border p-2">{product.category}</td> 
-  <td className="border p-2">{product.arrival}</td>
+  <td className="border p-2">{product.stock}</td>  
   <td className="border p-2">
     <button
       onClick={() => handleEdit(product)}
@@ -222,26 +176,9 @@ function EditProductForm({ product, onCancel, onSave }) {
   const [stock, setStock] = useState(product.stock || 0); 
   const [discount, setDiscount] = useState(product.discount || 0); 
   const [img, setImg] = useState(product.img || []);
-  const [description, setDescription] = useState(product.description); 
-  const [categories, setCategories] = useState([]);  
-  const [selectedCategory, setSelectedCategory] = useState(product.category || "");  
-  const [arrival, setArrival] = useState(product.arrival === 'yes');
+  const [description, setDescription] = useState(product.description);   
 
-  useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        const [categoriesRes ] = await Promise.all([
-          fetch("/api/category"),  
-        ]);
-
-        setCategories(await categoriesRes.json());  
-      } catch (error) {
-        console.error("Error fetching options:", error);
-      }
-    };
-
-    fetchOptions();
-  }, []);
+ 
 
   const handleSubmit = (e) => { 
     e.preventDefault();
@@ -253,9 +190,7 @@ function EditProductForm({ product, onCancel, onSave }) {
       img,
       price,
       stock,
-      discount,
-      category: selectedCategory,  
-      arrival: arrival ? 'yes' : 'no',
+      discount,   
     });
   };
 
@@ -267,16 +202,7 @@ function EditProductForm({ product, onCancel, onSave }) {
         <label className="block text-sm font-medium text-gray-700">Title</label>
         <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border p-2" required />
       </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">Category</label>
-        <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="w-full border p-2">
-          <option value="">Select Category</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.name}>{cat.name}</option>
-          ))}
-        </select>
-      </div>
+ 
 
     
 
@@ -299,13 +225,9 @@ function EditProductForm({ product, onCancel, onSave }) {
 
       <label className="block text-lg font-bold mb-2">Description</label>
       <ReactQuill value={description} onChange={setDescription} className="mb-4" theme="snow" placeholder="Write your product description here..." />
+ 
 
-      <div className="mb-4">
-        <input type="checkbox" checked={arrival} onChange={(e) => setArrival(e.target.checked)} />
-        <label className="ml-2 text-sm font-medium">New Arrival</label>
-      </div>
-
-      <Upload onFilesUpload={(url) => setImg(url)} /> 
+      <Upload onImagesUpload={(url) => setImg(url)} /> 
 
       <div className="flex gap-2">
         <button type="submit" className="bg-green-500 text-white px-4 py-2">Save</button>

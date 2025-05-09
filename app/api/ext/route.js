@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 export async function GET(req) {
   try {
-    const categories = await prisma.offer.findMany();
+    const categories = await prisma.extension.findMany();
     return new Response(JSON.stringify(categories), { status: 200 });
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -14,9 +14,9 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    const { code, per } = await req.json(); 
+    const { title,description, img } = await req.json(); 
     
-    const category = await prisma.offer.create({ data: { code, per } });
+    const category = await prisma.extension.create({ data: { title,description, img } });
     return new Response(JSON.stringify({ message: 'Category created successfully', category }), {
       status: 201,
     });
@@ -34,12 +34,12 @@ export async function PATCH(req) {
     const id = url.searchParams.get('id');
     if (!id) return new Response(JSON.stringify({ error: 'ID is required' }), { status: 400 });
  
-    const { code, per } = await req.json(); 
+    const { title,description, img } = await req.json(); 
 
 
-    const updatedCategory = await prisma.offer.update({
+    const updatedCategory = await prisma.extension.update({
       where: { id },
-      data: { code, per },
+      data: { title,description, img },
     });
     return new Response(JSON.stringify({ message: 'Category updated successfully', updatedCategory }), {
       status: 200,
@@ -56,7 +56,7 @@ export async function DELETE(req) {
     const id = url.searchParams.get('id');
     if (!id) return new Response(JSON.stringify({ error: 'ID is required' }), { status: 400 });
 
-    const deletedCategory = await prisma.offer.delete({ where: { id } });
+    const deletedCategory = await prisma.extension.delete({ where: { id } });
     return new Response(JSON.stringify({ message: 'Category deleted successfully', deletedCategory }), {
       status: 200,
     });
