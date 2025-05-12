@@ -24,6 +24,13 @@ model Service {
   img         String[]  
 }
 
+model New {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String 
+  img         String[]  
+}
+
 model Extension {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   title       String

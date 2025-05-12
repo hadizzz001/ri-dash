@@ -55,6 +55,11 @@ export default function Sidebar() {
               </a>
             </li>  
             <li>
+              <a href="/new" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
+                Add News
+              </a>
+            </li>  
+            <li>
               <a href="/app1" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
                 Manage Appointments
               </a>
