@@ -6,12 +6,9 @@ export async function POST(req) {
   try {
     const body = await req.json();
     const {   
-      title,
-description,
+      title, 
 price,
-discount,
-img, 
-stock, 
+cat
       } = body;
 
 console.log("body are: ",body);
@@ -20,12 +17,9 @@ console.log("body are: ",body);
 
     const product = await prisma.product.create({
       data: {
-        title,
-        description,
+        title, 
         price,
-        discount,
-        img, 
-        stock, 
+cat
           
       },
     });
@@ -63,3 +57,31 @@ export async function GET(req) {
     });
   }
 }
+
+
+export async function DELETE(req) {
+  try {
+    const result = await prisma.product.deleteMany();
+
+    return new Response(
+      JSON.stringify({
+        message: 'All products deleted successfully',
+        deletedCount: result.count,
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  } catch (error) {
+    console.error('Error deleting products:', error);
+    return new Response(
+      JSON.stringify({ error: 'Failed to delete products' }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+}
+

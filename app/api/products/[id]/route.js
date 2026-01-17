@@ -6,16 +6,12 @@ const prisma = new PrismaClient();
 export async function PATCH(request, { params }) {
   const { id } = params;
   const {
-    title,
-    description,
+    title, 
     price,
-    discount,
-    img, 
-    stock, 
+cat
      
   } = await request.json();
-
-  console.log("imgs are: ", img);
+ 
   
 
   try {
@@ -23,12 +19,9 @@ export async function PATCH(request, { params }) {
     const updatedProduct = await prisma.product.update({
       where: { id },
       data: {
-        title,
-        description,
+        title, 
         price,
-        discount,
-        img, 
-        stock, 
+cat
          
       },
     });

@@ -45,6 +45,11 @@ export default function Sidebar() {
               </a>
             </li>  
             <li>
+              <a href="/cat" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
+                Add Categroy
+              </a>
+            </li>  
+            <li>
               <a href="/ext" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
                 Add Extension
               </a>
