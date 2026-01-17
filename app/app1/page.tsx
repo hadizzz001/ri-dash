@@ -77,14 +77,16 @@ const [availableHours] = useState([
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const payload = {
-      country: formData.country,
-      city: formData.city,
-      dates: formData.dates.map((d) => ({
-        date: d.date,
-        hours: d.hours.map((h) => ({ hour: h, booked: false })),
-      })),
-    };
+const payload = {
+  country: formData.country,
+  city: formData.city,
+dates: formData.dates.map((d) => ({
+  date: `${d.date.getFullYear()}-${String(d.date.getMonth() + 1).padStart(2, '0')}-${String(d.date.getDate()).padStart(2, '0')}`,
+  hours: d.hours.map((h) => ({ hour: h, booked: false })),
+})),
+
+};
+
 
     try {
       const res = await fetch('/api/apoint', {
@@ -155,7 +157,19 @@ const handleDeleteAppointment = async (appointmentId, dateIndex) => {
           <label className="block mb-1">Select Date</label>
           <DatePicker
             selected={currentDate.date}
-            onChange={(date) => setCurrentDate({ ...currentDate, date })}
+          onChange={(date) => {
+  const localDate = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  );
+
+  setCurrentDate({
+    ...currentDate,
+    date: localDate,
+  });
+}}
+
             dateFormat="dd/MM/yyyy"
             className="border p-2 w-full"
             minDate={today} // Prevent past dates
@@ -241,8 +255,10 @@ const handleDeleteAppointment = async (appointmentId, dateIndex) => {
                   <tr key={`${index}-${i}`}>
                     <td className="border p-2">{item.info.country}</td>
                     <td className="border p-2">{item.info.city}</td>
-                    <td className="border p-2">{new Date(date.date).toLocaleDateString()}</td>
-                    <td className="border p-2">
+                   <td className="border p-2">
+  {new Date(date.date + 'T00:00:00').toLocaleDateString()}
+</td>
+ <td className="border p-2">
                       {date.hours.map((h, j) => (
                         <span
                           key={j}
