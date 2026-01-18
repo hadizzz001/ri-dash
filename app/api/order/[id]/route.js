@@ -51,32 +51,8 @@ export async function DELETE(request, { params }) {
   const { id } = params;
 
   try {
-    // 1️⃣ Find the order
-    const order = await prisma.order.findUnique({
-      where: { id },
-      select: { userInfo: true },
-    });
-
-    if (!order) {
-      return new Response(JSON.stringify({ message: "Order not found" }), {
-        status: 404,
-      });
-    }
-
-    // 2️⃣ Restore stock
-    if (Array.isArray(order.userInfo)) {
-      for (const item of order.userInfo) {
-        const encodedTitle = encodeURIComponent(item.title); // ✅ Fix spaces issue
-
-        await fetch(`https://senses1.netlify.app/api/products1/${encodedTitle}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ quantity: item.quantity }),
-        });
-      }
-    }
-
-    // 3️⃣ Delete order
+    
+     
     await prisma.order.delete({
       where: { id },
     });

@@ -50,17 +50,20 @@ model Appointment {
  
 
 model Order {
-  id        String  @id @default(auto()) @map("_id") @db.ObjectId
-  userInfo  Json
-  cartItems Json
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  phone     String
+  email     String
+  country   String
+  city      String 
+  date      String  
+  hour      String  
+  cart      Json  
   total     String
-  delivery  String
-  code      String?
-  paid      Boolean @default(false)
-  num       String?
-  remark    String?
-  date      String
+ paid        Boolean @default(false)
+ 
 }
+
 
  
 model Video {

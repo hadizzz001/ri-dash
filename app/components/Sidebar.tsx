@@ -70,7 +70,7 @@ export default function Sidebar() {
               </a>
             </li>  
             <li>
-              <a href="/app2" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
+              <a href="/reservation" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
                 View Appointments
               </a>
             </li>  

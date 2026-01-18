@@ -1,150 +1,63 @@
+"use client";
 
-"use client"
-import Link from "next/link";
-import ExportButton from "../components/ExportExcel";
-import { useState, useEffect } from "react";
-import { redirect, useRouter } from 'next/navigation';
-
-
-
-
-
-const page = () => {
-  const [allTemp, setTemp] = useState<any>()
-  const [updatedNums, setUpdatedNums] = useState({});
-  const [submittedPosts, setSubmittedPosts] = useState({}); 
+import { useEffect, useState } from "react";
+import {sendEmail} from '../api/sendEmail/sendEmail'
+const Page = () => {
+  const [allTemp, setTemp] = useState<any[]>([]);
   const [filterClientName, setFilterClientName] = useState("");
-  const [filterReceiptNum, setFilterReceiptNum] = useState("");
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
-  // Filtered data based on user input
-  const filteredData = allTemp?.filter((post) => {
-    const matchesClient =
-      filterClientName === "" ||
-      post.cartItems.fname.toLowerCase().includes(filterClientName.toLowerCase());
-
-    const matchesReceipt =
-      filterReceiptNum === "" || post.num?.includes(filterReceiptNum);
-
-    return matchesClient && matchesReceipt;
-  });
-
-
-  // Load submitted state from localStorage on mount
+  /* ================================
+     Fetch Orders
+  ================================= */
   useEffect(() => {
-    const storedSubmittedPosts = JSON.parse(localStorage.getItem("submittedPosts")) || {};
-    setSubmittedPosts(storedSubmittedPosts);
+    fetchOrders();
   }, []);
 
-  const handleInputChange = (id, value) => {
-    setUpdatedNums((prev) => ({ ...prev, [id]: value }));
-  };
-
-  const handleUpdate = async (id) => {
-    const numToUpdate = updatedNums[id]; // Get the updated number
-
-    if (!numToUpdate) return; // Prevent empty submission
-
+  const fetchOrders = async () => {
     try {
-      const response = await fetch(`/api/order1/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ num: numToUpdate }),
-      });
-
-      const result = await response.json();
-
+      const response = await fetch("/api/order");
       if (response.ok) {
-        console.log("Receipt number updated:", result);
-
-        // Update state and save to localStorage
-        setSubmittedPosts((prev) => {
-          const updatedState = { ...prev, [id]: true };
-          localStorage.setItem("submittedPosts", JSON.stringify(updatedState));
-          return updatedState;
-        });
+        const data = await response.json();
+        setTemp(data);
       } else {
-        console.error("Failed to update receipt number:", result);
+        console.error("Failed to fetch orders");
       }
     } catch (error) {
-      console.error("Error updating receipt number:", error);
+      console.error("Error fetching orders:", error);
     }
   };
 
+  /* ================================
+     Filters
+  ================================= */
+  const filteredData = allTemp.filter((post) =>
+    filterClientName === ""
+      ? true
+      : post.name?.toLowerCase().includes(filterClientName.toLowerCase())
+  );
 
- 
+  /* ================================
+     Helpers
+  ================================= */
+  const getTotalItems = (cart: any[] = []) =>
+    cart.reduce((acc, item) => acc + Number(item.qty || 0), 0);
 
-
-  // Fetch products and categories on load
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
-    const response = await fetch('/api/order');
-    if (response.ok) {
-      const data = await response.json();
-      setTemp(data);
-    } else {
-      console.error('Failed to fetch products');
-    }
+  const toggleExpand = (id: string) => {
+    setExpandedOrderId((prev) => (prev === id ? null : id));
   };
 
-
-
-
-  const calculateFinalTotal = (idd) => {
-    if (!allTemp || !allTemp?.userInfo || allTemp?.userInfo.length === 0) {
-      return { totalItems: 0 };
-    }
-
-    const filteredOrders = allTemp?.userInfo?.filter(order => order.id === idd);
-
-    return {
-      totalItems: filteredOrders.reduce((acc, post) => acc + (isNaN(post.quantity) ? 0 : post.quantity), 0),
-    };
-  };
-
-
-
-
-
-
-
-  const handlePaymentUpdate = async (id) => {
-    try {
-      const response = await fetch(`/api/order/${id}`, {
-        method: "PATCH",
-      });
-
-      if (response.ok) {
-        // Update UI by changing the `paid` status for this order
-        setTemp((prevOrders) =>
-          prevOrders.map((order) =>
-            order.id === id ? { ...order, paid: true } : order
-          )
-        );
-      } else {
-        console.error("Failed to update payment status.");
-      }
-    } catch (error) {
-      console.error("Error updating order:", error);
-    }
-  };
-
-
- 
-
-
-  const handleDeleteOrder = async (id) => {
+  /* ================================
+     Delete Order
+  ================================= */
+  const handleDeleteOrder = async (id: string) => {
     try {
       const response = await fetch(`/api/order/${id}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
-        console.log("Order deleted and stock restored");
-        // Refresh orders after deletion
-        window.location.replace("/reservation");;
+        setTemp((prev) => prev.filter((order) => order.id !== id));
       } else {
         console.error("Failed to delete order");
       }
@@ -152,121 +65,177 @@ const page = () => {
       console.error("Error deleting order:", error);
     }
   };
- 
- 
+
+const handleMarkAsPaid = async (id: string) => {
+  try {
+    const response = await fetch(`/api/order/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ paid: true }),
+    });
+
+    if (response.ok) {
+      // Update UI
+      setTemp((prev) =>
+        prev.map((order) =>
+          order.id === id ? { ...order, paid: true } : order
+        )
+      );
+
+      // 🔹 Get order data by id
+      const order = allTemp.find((order) => order.id === id);
+      if (!order) return;
+
+      // 🔹 Send only what the email needs
+      await sendEmail({
+        id: order.id,
+        name: order.name,
+        email: order.email,
+        total: order.total,
+        phone: order.phone,
+        cart: order.cart,
+        date: order.date,
+        hour: order.hour,
+        country: order.country,
+        city: order.city,
+      });
+
+    } else {
+      console.error("Failed to mark order as paid");
+    }
+  } catch (error) {
+    console.error("Error marking order as paid:", error);
+  }
+};
+
+
 
   return (
     <>
-    {/* Filter Inputs */}
-    <div className="flex space-x-4 mb-4">
-      <input
-        type="text"
-        value={filterClientName}
-        onChange={(e) => setFilterClientName(e.target.value)}
-        placeholder="Filter by Client Name"
-        className="border p-2"
-      />
-      <input
-        type="text"
-        value={filterReceiptNum}
-        onChange={(e) => setFilterReceiptNum(e.target.value)}
-        placeholder="Filter by Receipt #"
-        className="border p-2"
-      />
-    </div>
+      {/* Filter */}
+      <div className="container mb-4">
+        <input
+          type="text"
+          value={filterClientName}
+          onChange={(e) => setFilterClientName(e.target.value)}
+          placeholder="Filter by Client Name"
+          className="border p-2 w-64"
+        />
+      </div>
 
-    <ExportButton allTemp={allTemp} />
-    <table className="table table-striped container">
-      <thead>
-        <tr>
-          <th scope="col">Receipt #</th>
-          <th scope="col">Image</th>
-          <th scope="col">Client Name</th>
-          <th scope="col">Total Amount</th>
-          <th scope="col">Total Items</th>
-          <th scope="col">Code</th>
-          <th scope="col">Date</th>
-          <th scope="col">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {filteredData?.length > 0 ? (
-          filteredData.map((post) => (
-            <tr key={post.id}>
-              {/* Editable Receipt Number */}
-              <td>
-                {submittedPosts[post.id] ? (
-                  <p>{updatedNums[post.id] || post.num}</p>
-                ) : (
-                  <>
-                    <input
-                      type="text"
-                      value={updatedNums[post.id] || post.num || ""}
-                      onChange={(e) => handleInputChange(post.id, e.target.value)}
-                      placeholder="Enter receipt number"
-                      className="border p-1"
-                    />
-                    <button
-                      onClick={() => handleUpdate(post.id)}
-                      className="bg-blue-500 text-white p-1 ml-2"
-                    >
-                      Submit
-                    </button>
-                  </>
-                )}
-              </td>
+      {/* Table */}
+      <table className="table table-striped container w-full border">
+        <thead className="bg-gray-200">
+          <tr>
+            <th className="border p-2">Client Name</th>
+            <th className="border p-2">Email</th>
+            <th className="border p-2">Total Amount</th>
+            <th className="border p-2">Total Items</th>
+            <th className="border p-2">Date</th>
+            <th className="border p-2">Action</th>
+          </tr>
+        </thead>
 
-              <td>
-                <img src={post.userInfo[0].img[0]} width={70} height={70} />
-              </td>
-              <td>{post.cartItems.fname}</td>
-              <td>${post.total}</td>
-              <td>
-                {post.userInfo?.reduce(
-                  (acc, item) =>
-                    acc + (isNaN(item.quantity) ? 0 : Number(item.quantity)),
-                  0
+        <tbody>
+          {filteredData.length > 0 ? (
+            filteredData.map((post) => (
+              <>
+                {/* Main Row */}
+                <tr key={post.id}>
+                  <td className="border p-2">{post.name}</td>
+                  <td className="border p-2">{post.email}</td>
+                  <td className="border p-2">${post.total}</td>
+                  <td className="border p-2">
+                    {getTotalItems(post.cart)}
+                  </td>
+                  <td className="border p-2">
+                    {post.date} {post.hour}
+                  </td>
+<td className="border p-2 flex gap-2">
+  <button
+    onClick={() => toggleExpand(post.id)}
+    className="bg-blue-600 text-white px-3 py-1"
+  >
+    {expandedOrderId === post.id ? "Hide" : "View"}
+  </button>
+
+  <button
+    onClick={() => handleMarkAsPaid(post.id)}
+    disabled={post.paid}
+    className={`px-3 py-1 text-white ${
+      post.paid ? "bg-green-600 cursor-not-allowed" : "bg-yellow-500"
+    }`}
+  >
+    {post.paid ? "Paid" : "Mark as Paid"}
+  </button>
+
+  <button
+    onClick={() => handleDeleteOrder(post.id)}
+    className="bg-red-500 text-white px-3 py-1"
+  >
+    Delete
+  </button>
+</td>
+
+                </tr>
+
+                {/* Expanded Row */}
+                {expandedOrderId === post.id && (
+                  <tr>
+                    <td colSpan={6} className="bg-gray-100 p-4">
+                      <div className="space-y-2">
+                        <p><strong>Phone:</strong> {post.phone}</p>
+                        <p><strong>Country:</strong> {post.country}</p>
+                        <p><strong>City:</strong> {post.city}</p>
+
+                        <div className="mt-3">
+                          <strong>Details:</strong>
+                          <table className="w-full mt-2 border">
+                            <thead className="bg-gray-300">
+                              <tr>
+                                <th className="border p-2">Title</th>
+                                <th className="border p-2">Price</th>
+                                <th className="border p-2">Qty</th>
+                                <th className="border p-2">Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {post.cart.map((item: any, index: number) => (
+                                <tr key={index}>
+                                  <td className="border p-2">{item.title}</td>
+                                  <td className="border p-2">${item.price}</td>
+                                  <td className="border p-2">{item.qty}</td>
+                                  <td className="border p-2">
+                                    ${item.price * item.qty}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        <p className="font-bold mt-2">
+                           Total: ${post.total}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
                 )}
-              </td>
-              <td>{post.code}</td>
-              <td>{post.date}</td>
-              <td className="flex space-x-2">
-                <Link
-                  className="text-blue-700 bg-black p-2 w-20 h-10 flex items-center justify-center"
-                  href={`/order?id=${post.id}`}
-                >
-                  View
-                </Link>
-                <button
-                  onClick={() => handleDeleteOrder(post.id)}
-                  className="bg-red-500 text-white p-2 w-20 h-10"
-                >
-                  Delete
-                </button>
-                <button
-                  className={`p-2 w-20 h-10 ${
-                    post.paid ? "bg-blue-500 text-white" : "bg-black text-white"
-                  }`}
-                  onClick={() => !post.paid && handlePaymentUpdate(post.id)}
-                  disabled={post.paid}
-                >
-                  {post.paid ? "Paid" : "Unpaid"}
-                </button>
+              </>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={6} className="text-center p-4">
+                No matching records found.
               </td>
             </tr>
-          ))
-        ) : (
-          <tr>
-            <td colSpan={8} className="text-center">
-              No matching records found.
-            </td>
-          </tr>
-        )}
-      </tbody>
-    </table>
-  </>
+          )}
+        </tbody>
+      </table>
+    </>
+  );
+};
 
-  )
-}
-
-export default page
+export default Page;
