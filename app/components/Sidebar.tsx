@@ -31,12 +31,12 @@ export default function Sidebar() {
           <ul style={{ padding: 0, marginTop: "20px", listStyle: "none" }}>
             <li style={{ marginBottom: "15px" }}>
               <a href="/dashboard" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                All Products
+                All Items
               </a>
             </li>
             <li>
               <a href="/products" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                Add Product
+                Add Item
               </a>
             </li>    
             <li>
@@ -74,11 +74,11 @@ export default function Sidebar() {
                 View Appointments
               </a>
             </li>  
-            <li>
+            {/* <li>
               <a href="/reservation" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
                 Orders
               </a>
-            </li> 
+            </li>  */}
             <li>
               <a href="/" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
                 Logout

@@ -95,7 +95,7 @@ export default function ProductTable() {
           onSave={handleUpdate}
         />
       )}
-      <h1 className="text-2xl font-bold mb-4">Product List</h1>
+      <h1 className="text-2xl font-bold mb-4">Item List</h1>
 
       {/* Search Input */}
       <div className="mb-4">
@@ -184,7 +184,7 @@ function EditProductForm({ product, onCancel, onSave }) {
 
   return (
     <form onSubmit={handleSubmit} className="border p-4 bg-gray-100 rounded">
-      <h2 className="text-xl font-bold mb-4">Edit Product</h2>
+      <h2 className="text-xl font-bold mb-4">Edit Item</h2>
 
       {/* Title */}
       <div className="mb-4">

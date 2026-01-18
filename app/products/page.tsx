@@ -62,7 +62,7 @@ useEffect(() => {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-4">
-      <h1 className="text-xl font-bold mb-4">Add New Product</h1>
+      <h1 className="text-xl font-bold mb-4">Add New Item</h1>
       <input
         type="text"
         placeholder="Title"
@@ -105,7 +105,7 @@ useEffect(() => {
  
 
       <button type="submit" className="bg-green-500 text-white px-4 py-2">
-        Save Product
+        Save Item
       </button>
     </form>
   );
