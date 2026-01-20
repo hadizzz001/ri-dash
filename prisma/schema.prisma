@@ -70,3 +70,8 @@ model Video {
   id   String   @id @default(auto()) @map("_id") @db.ObjectId 
   img  String[]
 }
+
+model New1 {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String 
+}
