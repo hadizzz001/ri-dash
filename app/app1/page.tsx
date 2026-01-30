@@ -13,6 +13,8 @@ const ManageAppointments = () => {
   });
 
   const [currentDate, setCurrentDate] = useState({ date: null, hours: [] });
+  const [dateRange, setDateRange] = useState([null, null]); // [startDate, endDate]
+  const [isRangeMode, setIsRangeMode] = useState(false); // Toggle between single date and range mode
 const [availableHours] = useState([
   '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00',
   '13:00', '14:00', '15:00', '16:00', '17:00', '18:00',
@@ -47,15 +49,44 @@ const [availableHours] = useState([
   };
 
   const addDateEntry = () => {
-    if (!formData.country || !formData.city || !currentDate.date || currentDate.hours.length === 0) {
-      alert('Please fill out all required fields: country, city, date, and at least one hour.');
+    if (!formData.country || !formData.city || currentDate.hours.length === 0) {
+      alert('Please fill out all required fields: country, city, date(s), and at least one hour.');
       return;
     }
 
-    setFormData((prev) => ({
-      ...prev,
-      dates: [...prev.dates, { ...currentDate }],
-    }));
+    if (isRangeMode) {
+      if (!dateRange[0] || !dateRange[1]) {
+        alert('Please select both start and end dates for the range.');
+        return;
+      }
+      // Add entries for each day in the range
+      const start = new Date(dateRange[0]);
+      const end = new Date(dateRange[1]);
+      const newDates = [];
+      
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        newDates.push({
+          date: new Date(d),
+          hours: currentDate.hours,
+        });
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        dates: [...prev.dates, ...newDates],
+      }));
+
+      setDateRange([null, null]);
+    } else {
+      if (!currentDate.date) {
+        alert('Please select a date.');
+        return;
+      }
+      setFormData((prev) => ({
+        ...prev,
+        dates: [...prev.dates, { ...currentDate }],
+      }));
+    }
 
     setCurrentDate({ date: null, hours: [] });
     setIsCountryCityDisabled(true); // Disable country and city after first date is added
@@ -154,27 +185,84 @@ const handleDeleteAppointment = async (appointmentId, dateIndex) => {
         </div>
 
         <div>
-          <label className="block mb-1">Select Date</label>
-          <DatePicker
-            selected={currentDate.date}
-          onChange={(date) => {
-  const localDate = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate()
-  );
+          <label className="block mb-1">
+            <input
+              type="checkbox"
+              checked={isRangeMode}
+              onChange={(e) => {
+                setIsRangeMode(e.target.checked);
+                setCurrentDate({ date: null, hours: [] });
+                setDateRange([null, null]);
+              }}
+              className="mr-2"
+            />
+            Use Date Range (Select Multiple Days)
+          </label>
+        </div>
 
-  setCurrentDate({
-    ...currentDate,
-    date: localDate,
-  });
-}}
+        <div>
+          <label className="block mb-1">
+            {isRangeMode ? 'Select Date Range' : 'Select Date'}
+          </label>
+          {isRangeMode ? (
+            <div className="flex gap-2">
+              <DatePicker
+                selected={dateRange[0]}
+                onChange={(date) => {
+                  const localDate = new Date(
+                    date.getFullYear(),
+                    date.getMonth(),
+                    date.getDate()
+                  );
+                  setDateRange([localDate, dateRange[1]]);
+                }}
+                selectsStart
+                startDate={dateRange[0]}
+                endDate={dateRange[1]}
+                dateFormat="dd/MM/yyyy"
+                className="border p-2 flex-1"
+                minDate={today}
+                placeholderText="Start Date"
+              />
+              <DatePicker
+                selected={dateRange[1]}
+                onChange={(date) => {
+                  const localDate = new Date(
+                    date.getFullYear(),
+                    date.getMonth(),
+                    date.getDate()
+                  );
+                  setDateRange([dateRange[0], localDate]);
+                }}
+                selectsEnd
+                startDate={dateRange[0]}
+                endDate={dateRange[1]}
+                minDate={dateRange[0] || today}
+                dateFormat="dd/MM/yyyy"
+                className="border p-2 flex-1"
+                placeholderText="End Date"
+              />
+            </div>
+          ) : (
+            <DatePicker
+              selected={currentDate.date}
+              onChange={(date) => {
+                const localDate = new Date(
+                  date.getFullYear(),
+                  date.getMonth(),
+                  date.getDate()
+                );
 
-            dateFormat="dd/MM/yyyy"
-            className="border p-2 w-full"
-            minDate={today} // Prevent past dates
-             
-          />
+                setCurrentDate({
+                  ...currentDate,
+                  date: localDate,
+                });
+              }}
+              dateFormat="dd/MM/yyyy"
+              className="border p-2 w-full"
+              minDate={today}
+            />
+          )}
         </div>
 
         <div>
