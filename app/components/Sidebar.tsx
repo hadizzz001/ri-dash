@@ -19,8 +19,8 @@ export default function Sidebar() {
           color: "white",
           height: "100vh",
           position: "fixed",
-          width: isOpen ? "200px" : "0",
-          left: isOpen ? "0" : "-200px",
+          width: isOpen ? "280px" : "0",
+          left: isOpen ? "0" : "-280px",
           overflow: "hidden",
           transition: "left 0.3s ease-in-out",
           padding: isOpen ? "16px" : "0",
@@ -79,11 +79,50 @@ export default function Sidebar() {
                 View Appointments
               </a>
             </li>  
-            {/* <li>
-              <a href="/reservation" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
+
+            
+
+
+
+
+
+            <li  >
+              <a href="/dashboard1" style={{ color: "white", textDecoration: "none" }}>
+                All Products
+              </a>
+            </li>
+            <li>
+              <a href="/products1" style={{ color: "white", textDecoration: "none" }}>
+                Add Product
+              </a>
+            </li>
+            <li>
+              <a href="/category" style={{ color: "white", textDecoration: "none" }}>
+                Add Product Category
+              </a>
+            </li>
+            <li>
+              <a href="/sub" style={{ color: "white", textDecoration: "none" }}>
+                Add Sub-category
+              </a>
+            </li>
+            <li>
+              <a href="/factory" style={{ color: "white", textDecoration: "none" }}>
+                Add Brand
+              </a>
+            </li>
+
+            <li>
+              <a href="/offer" style={{ color: "white", textDecoration: "none" }}>
+                Add Code
+              </a>
+            </li>
+            <li>
+              <a href="/reservation1" style={{ color: "white", textDecoration: "none" }}>
                 Orders
               </a>
-            </li>  */}
+            </li>
+ 
             <li>
               <a href="/" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
                 Logout

@@ -75,3 +75,65 @@ model New1 {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   title       String 
 }
+
+
+
+
+
+model Product1 {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  title        String 
+  description  String?
+  price        String?
+  discount     String?
+  img          String[]
+  category     String
+  stock        String? 
+  color        Json?
+  type         String
+  arrival      String   @default("no")
+  cost         String?
+  sub          String
+  factory      String 
+  sale         String? 
+}
+
+model Category1 {
+  id   String   @id @default(auto()) @map("_id") @db.ObjectId
+  name String   @unique
+  img  String[] 
+}
+
+model Sub1 {
+  id   String   @id @default(auto()) @map("_id") @db.ObjectId
+  name String   @unique 
+  img  String[] 
+}
+
+model Factory1 {
+  id   String   @id @default(auto()) @map("_id") @db.ObjectId
+  name String   @unique
+  img  String[] 
+}
+
+model Offer {
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  code String
+  per  Int
+}
+
+model Order1 {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  oid         Int     @unique
+  userInfo    Json
+  cartItems   Json
+  total       String
+  delivery    String
+  code        String?
+  paid        Boolean @default(false)
+  num         String?
+  remark      String?
+  fulfillment Boolean @default(false)
+  date        String
+  delete      Boolean @default(false)
+}

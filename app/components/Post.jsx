@@ -17,7 +17,7 @@ const Post = ({ post }) => {
   const [secondSelectValue, setSecondSelectValue] = useState('');
   const [secondSelectOptions, setSecondSelectOptions] = useState([]);
   const [value1, setValue1] = useState('');
-  const [imgs, setImgs] = useState([''])
+  const [imgs, setImgs] = useState([])
 
   const [openModalDelete, setOpenModalDelete] = useState(false);
 
@@ -73,8 +73,10 @@ const Post = ({ post }) => {
 
 
   const handleImgChange = (url) => {
-    if (url) {
-      setImgs(url);
+    if (url && Array.isArray(url)) {
+      setImgs(url.filter(img => img !== ''));
+    } else if (url) {
+      setImgs([url]);
     }
   }
 

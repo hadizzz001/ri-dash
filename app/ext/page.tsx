@@ -111,14 +111,14 @@ const ManageService = () => {
     }
   };
 
-  const handleImgChange = (url) => {
-    if (url) {
-      setImg(url);
+  const handleImgChange = (urls) => {
+    if (Array.isArray(urls) && urls.length > 0) {
+      setImg((prevImages) => [...prevImages, ...urls]);
     }
   };
 
   useEffect(() => {
-    if (!img.includes('')) {
+    if (Array.isArray(img) && img.length > 0) {
       setFormData((prev) => ({ ...prev, img }));
     }
   }, [img]);
