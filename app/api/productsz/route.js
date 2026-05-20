@@ -25,12 +25,15 @@ export async function POST(req) {
 
 
 
+    // If no discount, show the price on the discount field
+    const finalDiscount = discount || price;
+
     const product = await prisma.product1.create({
       data: {
         title,
         description,
         price,
-        discount,
+        discount: finalDiscount,
         img,
         category,
         stock,

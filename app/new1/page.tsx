@@ -2,20 +2,18 @@
 
 import { useState, useEffect } from 'react';
 
-const SERVICE_ID = '696f9177fb28e053631afac3';
-
-const ManageService = () => {
-  const [title, setTitle] = useState('');
+const ManageNew1 = () => {
+  const [editTitle, setEditTitle] = useState('');
+  const [editId, setEditId] = useState('');
+  const [items, setItems] = useState([]);
   const [message, setMessage] = useState('');
 
-  const fetchService = async () => {
+  const fetchItems = async () => {
     try {
-      const res = await fetch(`/api/new1?id=${SERVICE_ID}`);
+      const res = await fetch('/api/new1');
       if (res.ok) {
         const data = await res.json();
-        setTitle(data.title || '');
-      } else {
-        console.error('Failed to fetch service');
+        setItems(data);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -23,24 +21,30 @@ const ManageService = () => {
   };
 
   useEffect(() => {
-    fetchService();
+    fetchItems();
   }, []);
 
-  const handleUpdate = async (e) => {
-    e.preventDefault();
+  const handleEdit = (item: any) => {
+    setEditId(item.id);
+    setEditTitle(item.title);
+  };
 
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      const res = await fetch(`/api/new1?id=${SERVICE_ID}`, {
+      const res = await fetch(`/api/new1?id=${encodeURIComponent(editId)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title }),
+        body: JSON.stringify({ title: editTitle }),
       });
-
       if (res.ok) {
         setMessage('Updated successfully!');
+        setEditId('');
+        setEditTitle('');
+        fetchItems();
       } else {
-        const errorData = await res.json();
-        setMessage(`Error: ${errorData.error}`);
+        const err = await res.json();
+        setMessage(`Error: ${err.error}`);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -49,29 +53,51 @@ const ManageService = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Edit Service</h1>
+    <div className="container mx-auto p-4 max-w-2xl">
+      <h1 className="text-2xl font-bold mb-4">Manage New1</h1>
 
-      <form onSubmit={handleUpdate} className="space-y-4">
-        <div>
-          <label className="block mb-1">Title</label>
+      {/* Edit Form */}
+      {editId && (
+        <form onSubmit={handleUpdate} className="flex gap-2 mb-6 bg-yellow-50 p-3 rounded border border-yellow-300">
           <input
             type="text"
-            className="border p-2 w-full"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            className="border p-2 flex-1"
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
             required
           />
-        </div>
+          <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
+            Update
+          </button>
+          <button
+            type="button"
+            onClick={() => { setEditId(''); setEditTitle(''); }}
+            className="bg-gray-400 text-white px-4 py-2 rounded"
+          >
+            Cancel
+          </button>
+        </form>
+      )}
 
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2">
-          Update
-        </button>
-      </form>
+      {message && <p className="mb-4 text-green-600">{message}</p>}
 
-      {message && <p className="mt-4">{message}</p>}
+      {/* Items List */}
+      <div className="space-y-2">
+        {items.length === 0 && <p className="text-gray-500">No items yet.</p>}
+        {items.map((item: any) => (
+          <div key={item.id} className="flex items-center justify-between border p-3 rounded">
+            <span>{item.title}</span>
+            <button
+              onClick={() => handleEdit(item)}
+              className="bg-blue-500 text-white px-3 py-1 rounded text-sm"
+            >
+              Edit
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
 
-export default ManageService;
+export default ManageNew1;

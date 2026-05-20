@@ -107,8 +107,10 @@ const handleColorToggle = (colorId) => {
     const payload = {
       title,
       description,
-      price: Number(price).toFixed(2),
-      discount: discountPrice ? Number(discountPrice).toFixed(2) : null,
+      // When no sale: price = discountPrice, discount = discountPrice (same value)
+      // When sale: price = original price, discount = discounted price
+      price: sale === "yes" ? Number(price).toFixed(2) : Number(discountPrice).toFixed(2),
+      discount: Number(discountPrice).toFixed(2),
       img,
       category: selectedCategory,
       sub: selectedsubCategory,

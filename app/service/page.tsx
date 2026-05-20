@@ -35,12 +35,13 @@ const ManageService = () => {
     const res = await fetch('/api/service', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
+      body: JSON.stringify({ ...formData, img }),
     });
 
     if (res.ok) {
       setMessage('Service added successfully!');
       setFormData({ title: '', description: '', img: [] });
+      setImg([]);
       fetchServices();
       window.location.href = '/service';
     } else {
@@ -113,7 +114,7 @@ const ManageService = () => {
 
   const handleImgChange = (urls) => {
     if (Array.isArray(urls) && urls.length > 0) {
-      setImg((prevImages) => [...prevImages, ...urls]);
+      setImg(urls);
     }
   };
 

@@ -234,13 +234,13 @@ export default function ProductTable() {
                   )}
                 </td> */}
 <td className="border p-2">
-  {product.discount && product.discount > 0 ? (
+  {product.sale === "yes" && product.price && product.price !== product.discount ? (
     <span>
       <span className="line-through text-red-600 mr-1">${product.price}</span>
       <span className="font-bold text-green-600">${product.discount}</span>
     </span>
   ) : (
-    `$${product.price}`
+    `$${product.discount || product.price}`
   )}
 </td>
 
@@ -425,9 +425,10 @@ const handleSubmit = (e) => {
 
 
   // ✅ calculate final price after discount
-const discountedPrice = discountPrice
-  ? Number(discountPrice).toFixed(2)
-  : null;
+  // When no sale: price = discountPrice, discount = discountPrice (same value)
+  // When sale: price = original price, discount = discounted price
+const finalPrice = sale === "yes" ? String(price) : String(discountPrice);
+const discountedPrice = Number(discountPrice).toFixed(2);
 
 
   const payload = {
@@ -436,10 +437,10 @@ const discountedPrice = discountPrice
     title,
     description,
 
-    // ORIGINAL PRICE
-    price: String(price),
+    // ORIGINAL PRICE (or same as discount when no sale)
+    price: finalPrice,
 
-    // FINAL PRICE AFTER DISCOUNT (80 if discount=20% on price=100)
+    // EFFECTIVE/FINAL PRICE (always populated)
     discount: discountedPrice,
 
     img,

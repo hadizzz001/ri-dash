@@ -124,6 +124,14 @@ export default function Sidebar() {
             </li>
  
             <li>
+              <a
+                href="/api/backup"
+                style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}
+              >
+                Backup
+              </a>
+            </li>
+            <li>
               <a href="/" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
                 Logout
               </a>

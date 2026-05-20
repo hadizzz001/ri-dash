@@ -26,13 +26,16 @@ export async function PATCH(request, { params }) {
 
   try {
     // Update product and its specifications
+    // If no discount, show the price on the discount field
+    const finalDiscount = discount || price;
+
     const updatedProduct = await prisma.product1.update({
       where: { id },
       data: {
         title,
         description,
         price,
-        discount,
+        discount: finalDiscount,
         img,
         category,
         stock,
