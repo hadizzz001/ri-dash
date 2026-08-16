@@ -1,15 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 
-export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(true);
+interface SidebarProps {
+  isOpen: boolean;
+  toggleSidebar: () => void;
+}
 
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-  };
-
+export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   return (
     <div id="sidenavv" style={{ position: "relative" }}>
       {/* Sidebar */}
@@ -144,9 +142,9 @@ export default function Sidebar() {
       <button
         onClick={toggleSidebar}
         style={{
-          position: "absolute",
+          position: "fixed",
           top: "20px",
-          left: isOpen ? "200px" : "10px",
+          left: isOpen ? "260px" : "10px",
           background: "#000",
           color: "white",
           border: "none",
@@ -155,13 +153,12 @@ export default function Sidebar() {
           fontSize: "18px",
           transition: "left 0.3s ease-in-out",
           borderRadius: "5px",
+          zIndex: 1000,
         }}
       >
         {isOpen ? <FaArrowLeft /> : <FaArrowRight />}
       </button>
 
-      {/* Spacer to push content */}
-      <div style={{ marginLeft: isOpen ? "200px" : "0", transition: "margin-left 0.3s ease-in-out" }} />
       <style
   dangerouslySetInnerHTML={{
     __html: "\n  a {\n    color: #fff !important;\n}\n"

@@ -3,7 +3,7 @@
 import "./globals.css";
 import { Inter } from "next/font/google";
 import "bootstrap/dist/css/bootstrap.min.css";
-import Sidebar from "./components/Sidebar"; // Import Sidebar
+import AppShell from "./components/AppShell"; // Import AppShell (Sidebar + squeezed content)
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -28,13 +28,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} d-flex`}>
-        {/* Sidebar */}
-        <Sidebar />
-
-        {/* Main Content */}
-        <main className="flex-grow-1" style={{ padding: "20px", width: "100%" }}>
-          {children}
-        </main>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

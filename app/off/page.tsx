@@ -119,7 +119,7 @@ const ManageCategory = () => {
   // ✅ Handle image upload
   const handleImgChange = (urls) => {
     if (Array.isArray(urls) && urls.length > 0) {
-      setImg((prevImages) => [...prevImages, ...urls]);
+      setImg(urls);
     }
   };
 
