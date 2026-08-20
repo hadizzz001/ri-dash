@@ -120,6 +120,11 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
                 Orders
               </a>
             </li>
+            <li>
+              <a href="/ads" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
+                Ads Images
+              </a>
+            </li>
  
             <li>
               <a

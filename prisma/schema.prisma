@@ -122,6 +122,12 @@ model Offer {
   per  Int
 }
 
+model Ad {
+  id  String   @id @default(auto()) @map("_id") @db.ObjectId
+  url String
+  img String[]
+}
+
 model Order1 {
   id          String  @id @default(auto()) @map("_id") @db.ObjectId
   oid         Int     @unique
