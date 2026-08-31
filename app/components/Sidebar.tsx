@@ -43,6 +43,11 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
               </a>
             </li>  
             <li>
+              <a href="/servicedata" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
+                Services Data
+              </a>
+            </li>  
+            <li>
               <a href="/cat" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
                 Add Categroy
               </a>

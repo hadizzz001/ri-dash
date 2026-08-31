@@ -26,6 +26,14 @@ model Service {
   img         String[]  
 }
 
+model ServiceData {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  serviceId   String   @db.ObjectId
+  title       String
+  description String
+  img         String[]
+}
+
 model New {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   title       String
