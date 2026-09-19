@@ -126,6 +126,16 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
               </a>
             </li>
             <li>
+              <a href="/reviews" style={{ color: "white", textDecoration: "none" }}>
+                Product Reviews
+              </a>
+            </li>
+            <li>
+              <a href="/users" style={{ color: "white", textDecoration: "none" }}>
+                Customers
+              </a>
+            </li>
+            <li>
               <a href="/ads" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
                 Ads Images
               </a>
