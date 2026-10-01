@@ -4,11 +4,13 @@ import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import "react-quill/dist/quill.snow.css";
 import Upload from "../components/Upload";
+import BarcodeInput from "../components/BarcodeInput";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 export default function AddProduct() {
   const [title, setTitle] = useState("");
+  const [barcode, setBarcode] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
@@ -106,6 +108,7 @@ const handleColorToggle = (colorId) => {
 
     const payload = {
       title,
+      barcode,
       description,
       // When no sale: price = discountPrice, discount = discountPrice (same value)
       // When sale: price = original price, discount = discounted price
@@ -148,7 +151,10 @@ const handleColorToggle = (colorId) => {
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) return alert("Failed to add product");
+    if (!response.ok) {
+      const { error } = await response.json().catch(() => ({}));
+      return alert(error || "Failed to add product");
+    }
 
     alert("Product added successfully!");
     window.location.href = "/dashboard1";
@@ -173,6 +179,10 @@ const handleColorToggle = (colorId) => {
         className="w-full border p-2 mb-4"
         required
       />
+
+      {/* BARCODE */}
+      <label className="font-bold">Barcode <span className="font-normal text-gray-500">(optional)</span></label>
+      <BarcodeInput value={barcode} onChange={setBarcode} className="mb-4" />
 
       {/* CATEGORY */}
       <label className="font-bold">Category</label>

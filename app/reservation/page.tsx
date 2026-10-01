@@ -43,6 +43,10 @@ const Page = () => {
   const getTotalItems = (cart: any[] = []) =>
     cart.reduce((acc, item) => acc + Number(item.qty || 0), 0);
 
+  // Older bookings were made before the salon / home choice existed
+  const serviceLabel = (type?: string) =>
+    type === "home" ? "Home" : type === "salon" ? "Salon" : "—";
+
   const toggleExpand = (id: string) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
   };
@@ -131,6 +135,7 @@ const handleMarkAsPaid = async (id: string) => {
           <tr>
             <th className="border p-2">Client Name</th>
             <th className="border p-2">Email</th>
+            <th className="border p-2">Service</th>
             <th className="border p-2">Total Amount</th>
             <th className="border p-2">Total Items</th>
             <th className="border p-2">Date</th>
@@ -146,6 +151,7 @@ const handleMarkAsPaid = async (id: string) => {
                 <tr key={post.id}>
                   <td className="border p-2">{post.name}</td>
                   <td className="border p-2">{post.email}</td>
+                  <td className="border p-2">{serviceLabel(post.serviceType)}</td>
                   <td className="border p-2">${post.total}</td>
                   <td className="border p-2">
                     {getTotalItems(post.cart)}
@@ -184,11 +190,12 @@ const handleMarkAsPaid = async (id: string) => {
                 {/* Expanded Row */}
                 {expandedOrderId === post.id && (
                   <tr>
-                    <td colSpan={6} className="bg-gray-100 p-4">
+                    <td colSpan={7} className="bg-gray-100 p-4">
                       <div className="space-y-2">
                         <p><strong>Phone:</strong> {post.phone}</p>
                         <p><strong>Country:</strong> {post.country}</p>
                         <p><strong>City:</strong> {post.city}</p>
+                        <p><strong>Service:</strong> {serviceLabel(post.serviceType)}</p>
 
                         <div className="mt-3">
                           <strong>Details:</strong>
@@ -216,6 +223,16 @@ const handleMarkAsPaid = async (id: string) => {
                           </table>
                         </div>
 
+                        {(Number(post.homeFee) > 0 || Number(post.tax) > 0) && (
+                          <p className="mt-2">Subtotal: ${post.subtotal}</p>
+                        )}
+                        {Number(post.homeFee) > 0 && (
+                          <p>Home service (×2): ${post.homeFee}</p>
+                        )}
+                        {Number(post.tax) > 0 && (
+                          <p>Tax ({post.taxPercent}%): ${post.tax}</p>
+                        )}
+
                         <p className="font-bold mt-2">
                            Total: ${post.total}
                         </p>
@@ -227,7 +244,7 @@ const handleMarkAsPaid = async (id: string) => {
             ))
           ) : (
             <tr>
-              <td colSpan={6} className="text-center p-4">
+              <td colSpan={7} className="text-center p-4">
                 No matching records found.
               </td>
             </tr>

@@ -81,7 +81,12 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
               <a href="/reservation" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
                 View Appointments
               </a>
-            </li>  
+            </li>
+            <li>
+              <a href="/tax" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
+                Appointment Tax
+              </a>
+            </li>
 
             
 
@@ -138,6 +143,11 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
             <li>
               <a href="/ads" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
                 Ads Images
+              </a>
+            </li>
+            <li>
+              <a href="/aboutbanner" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
+                About Banner
               </a>
             </li>
  

@@ -54,6 +54,7 @@ const ManageService = () => {
       id: service.id,
       title: service.title,
     });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleEditSubmit = async (e) => {
@@ -135,6 +136,18 @@ const ManageService = () => {
         <button type="submit" className="bg-blue-500 text-white px-4 py-2">
           {editMode ? 'Update Category' : 'Add Category'}
         </button>
+        {editMode && (
+          <button
+            type="button"
+            onClick={() => {
+              setEditMode(false);
+              setEditFormData({ id: '', title: '' });
+            }}
+            className="bg-gray-500 text-white px-4 py-2 ml-2"
+          >
+            Cancel
+          </button>
+        )}
       </form>
 
       {message && <p className="mt-4">{message}</p>}

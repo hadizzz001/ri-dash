@@ -49,6 +49,7 @@ export default function ProductTable() {
 
   const handleEdit = (product) => {
     setEditingProduct(product);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleUpdate = async (updatedProduct) => {
@@ -90,7 +91,9 @@ export default function ProductTable() {
     <div className="max-w-6xl mx-auto p-4">
       {editingProduct && (
         <EditProductForm
+          key={editingProduct.id}
           product={editingProduct}
+          usedCategories={products.map((p) => p.cat)}
           onCancel={() => setEditingProduct(null)}
           onSave={handleUpdate}
         />
@@ -156,12 +159,19 @@ export default function ProductTable() {
 }
 
  
-function EditProductForm({ product, onCancel, onSave }) {
+function EditProductForm({ product, usedCategories, onCancel, onSave }) {
   const [title, setTitle] = useState(product.title);
   const [price, setPrice] = useState(product.price); 
 
   const [categories, setCategories] = useState([]);
   const [categoryId, setCategoryId] = useState(product.cat || "");
+
+  // Items can carry a category that isn't in the Categories list (e.g. the
+  // seeded service menu), so offer those too — otherwise the item's own
+  // category has no matching option and the dropdown can't pre-select it.
+  const categoryOptions = Array.from(
+    new Set([...categories.map((c) => c.title), ...usedCategories, product.cat])
+  ).filter(Boolean);
 
   // Fetch categories
   useEffect(() => {
@@ -208,9 +218,9 @@ function EditProductForm({ product, onCancel, onSave }) {
           required
         >
           <option value="">Select category</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.title}>
-              {cat.title}
+          {categoryOptions.map((title) => (
+            <option key={title} value={title}>
+              {title}
             </option>
           ))}
         </select>

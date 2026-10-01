@@ -1,10 +1,12 @@
 import { PrismaClient } from '@prisma/client';
+import { normalizeBarcode, findBarcodeOwner, barcodeTakenResponse } from '../../../libs/barcode';
 
 const prisma = new PrismaClient();
 
 // Update Product API
 export async function PATCH(request, { params }) {
   const { id } = params;
+  const body = await request.json();
   const {
     title,
     description,
@@ -19,12 +21,20 @@ export async function PATCH(request, { params }) {
     sub,
     factory,
     sale,
-  } = await request.json();
+  } = body;
 
   console.log("imgs are: ", img);
 
 
   try {
+    // Only touch the barcode when the client sent one (null / '' clears it).
+    const hasBarcode = Object.prototype.hasOwnProperty.call(body, 'barcode');
+    const barcode = normalizeBarcode(body.barcode);
+    if (hasBarcode && barcode) {
+      const owner = await findBarcodeOwner(prisma, barcode, id);
+      if (owner) return barcodeTakenResponse(owner);
+    }
+
     // Update product and its specifications
     // If no discount, show the price on the discount field
     const finalDiscount = discount || price;
@@ -45,6 +55,7 @@ export async function PATCH(request, { params }) {
         sub,
         factory,
         sale,
+        ...(hasBarcode && { barcode }),
       },
     });
 

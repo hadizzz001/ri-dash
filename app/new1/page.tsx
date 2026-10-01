@@ -27,6 +27,7 @@ const ManageNew1 = () => {
   const handleEdit = (item: any) => {
     setEditId(item.id);
     setEditTitle(item.title);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleUpdate = async (e: React.FormEvent) => {

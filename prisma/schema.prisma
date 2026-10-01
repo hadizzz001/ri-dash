@@ -66,10 +66,22 @@ model Order {
   city      String 
   date      String  
   hour      String  
-  cart      Json  
+  cart      Json
   total     String
  paid        Boolean @default(false)
- 
+  // Salon / home service and tax (missing on older bookings)
+  serviceType String?
+  subtotal    String?
+  homeFee     String?
+  taxPercent  String?
+  tax         String?
+}
+
+// Appointment tax: a single percentage, added to every booking total
+// (salon and home service alike). Set from the dashboard's Tax page.
+model Tax {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  percent Float  @default(0)
 }
 
 
@@ -102,8 +114,11 @@ model Product1 {
   arrival      String   @default("no")
   cost         String?
   sub          String
-  factory      String 
-  sale         String? 
+  factory      String
+  sale         String?
+  // Kept unique by the API; not @unique, because a Mongo unique index
+  // would reject every existing product that has no barcode yet.
+  barcode      String?
 }
 
 model Category1 {
@@ -134,6 +149,12 @@ model Ad {
   id  String   @id @default(auto()) @map("_id") @db.ObjectId
   url String
   img String[]
+}
+
+// About page banner: one image, shown full width at the top of the page.
+model AboutBanner {
+  id  String @id @default(auto()) @map("_id") @db.ObjectId
+  img String
 }
 
 model Order1 {

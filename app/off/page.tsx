@@ -63,6 +63,7 @@ const ManageCategory = () => {
       img: category.img,
     });
     setImg(category.img);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleEditSubmit = async (e) => {
@@ -124,10 +125,11 @@ const ManageCategory = () => {
   };
 
   useEffect(() => {
+    if (editMode) return; // editing uses `img` directly; keep the Add form clean
     if (Array.isArray(img) && img.length > 0) {
       setFormData((prevState) => ({ ...prevState, img }));
     }
-  }, [img]);
+  }, [img, editMode]);
 
  
   return (
@@ -151,7 +153,7 @@ const ManageCategory = () => {
           className="border p-2 w-full"
         />
 
-        <Upload onImagesUpload={handleImgChange} />
+        <Upload key={editFormData.id || 'new'} onImagesUpload={handleImgChange} />
 
         <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">
           {editMode ? 'Update offer' : 'Add offer'}
@@ -162,6 +164,7 @@ const ManageCategory = () => {
             onClick={() => {
               setEditMode(false);
               setEditFormData({ id: '', name: '', img: [] });
+              setImg([]);
             }}
             className="bg-gray-500 text-white px-4 py-2 rounded ml-2"
           >

@@ -75,6 +75,7 @@ const ManageServiceData = () => {
       description: row.description,
     });
     setImg(row.img || []);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id) => {

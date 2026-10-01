@@ -37,10 +37,21 @@ export async function PATCH(req) {
     const { name, img } = await req.json(); 
 
 
+    const previous = await prisma.factory1.findUnique({ where: { id } });
+
     const updatedCategory = await prisma.factory1.update({
       where: { id },
       data: { name, img },
     });
+
+    // Items store the name as text, so carry a rename over to them —
+    // otherwise their edit dropdown no longer finds a matching option.
+    if (previous && name && previous.name !== name) {
+      await prisma.product1.updateMany({
+        where: { factory: previous.name },
+        data: { factory: name },
+      });
+    }
     return new Response(JSON.stringify({ message: 'Category updated successfully', updatedCategory }), {
       status: 200,
     });

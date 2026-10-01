@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { normalizeBarcode, findBarcodeOwner, barcodeTakenResponse } from '../../libs/barcode';
 
 const prisma = new PrismaClient();
 
@@ -23,7 +24,11 @@ export async function POST(req) {
 
     console.log("body are: ", body);
 
-
+    const barcode = normalizeBarcode(body.barcode);
+    if (barcode) {
+      const owner = await findBarcodeOwner(prisma, barcode);
+      if (owner) return barcodeTakenResponse(owner);
+    }
 
     // If no discount, show the price on the discount field
     const finalDiscount = discount || price;
@@ -41,8 +46,9 @@ export async function POST(req) {
         color,
         type, 
         sub,
-        factory, 
+        factory,
         sale,
+        barcode,
       },
     });
 

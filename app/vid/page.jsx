@@ -65,6 +65,7 @@ const ManageCategory = () => {
       img: category.img,
     });
     setImg(category.img); // Populate img state with existing images for editing
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleEditSubmit = async (e) => {
@@ -86,12 +87,10 @@ const ManageCategory = () => {
         fetchCategories();
         
       } else {
-        window.location.reload();
         const errorData = await res.json();
         setMessage(`Error: ${errorData.error}`); 
       }
     } catch (error) {
-      window.location.reload();
       console.error('Error:', error);
       setMessage('An error occurred while updating the category.'); 
     }
@@ -125,10 +124,11 @@ const ManageCategory = () => {
   };
 
   useEffect(() => {
+    if (editMode) return; // editing uses `img` directly; keep the Add form clean
     if (!img.includes('')) {
       setFormData((prevState) => ({ ...prevState, img }));
     }
-  }, [img]);
+  }, [img, editMode]);
 
   return (
     <div className="container mx-auto p-4">
@@ -136,10 +136,23 @@ const ManageCategory = () => {
       <form onSubmit={editMode ? handleEditSubmit : handleSubmit} className="space-y-4">
          
        
-        <Upload1 onFilesUpload={handleImgChange} />
+        <Upload1 key={editFormData.id || 'new'} onFilesUpload={handleImgChange} />
         <button type="submit" className="bg-blue-500 text-white px-4 py-2">
           {editMode ? 'Update video' : 'Add video'}
         </button>
+        {editMode && (
+          <button
+            type="button"
+            onClick={() => {
+              setEditMode(false);
+              setEditFormData({ id: '',  img: [] });
+              setImg([]);
+            }}
+            className="bg-gray-500 text-white px-4 py-2 ml-2"
+          >
+            Cancel
+          </button>
+        )}
       </form>
       {message && <p className="mt-4">{message}</p>}
 

@@ -5,6 +5,10 @@ import Upload from '../components/Upload';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
 import ExportToExcel from '../components/ExportToExcel';
+import BarcodeInput from '../components/BarcodeInput';
+
+const sameBarcode = (a, b) =>
+  !!a && !!b && String(a).replace(/\s+/g, '') === String(b).replace(/\s+/g, '');
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
@@ -65,6 +69,7 @@ export default function ProductTable() {
 
   const handleEdit = (product) => {
     setEditingProduct(product);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleUpdate = async (updatedProduct) => {
@@ -80,16 +85,28 @@ export default function ProductTable() {
         setEditingProduct(null);
         fetchProducts();
       } else {
-        console.error('Failed to update product');
+        const { error } = await response.json().catch(() => ({}));
+        alert(error || 'Failed to update product');
       }
     } catch (error) {
       console.error('Error:', error);
     }
   };
 
-  // Filter products by search query
+  // Filter products by search query (title or barcode)
   const filterBySearch = (product) => {
-    return product.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return true;
+    return (
+      product.title.toLowerCase().includes(query) ||
+      String(product.barcode || '').toLowerCase().includes(query.replace(/\s+/g, ''))
+    );
+  };
+
+  // A scanned / entered barcode that matches exactly opens that product
+  const openByBarcode = (code) => {
+    const match = products.find((p) => sameBarcode(p.barcode, code));
+    if (match) handleEdit(match);
   };
 
   // Filter products by selected category
@@ -115,6 +132,7 @@ export default function ProductTable() {
     <div className="max-w-7xl mx-auto p-4 text-[12px]">
       {editingProduct && (
         <EditProductForm
+          key={editingProduct.id}
           product={editingProduct}
           onCancel={() => setEditingProduct(null)}
           onSave={handleUpdate}
@@ -122,14 +140,15 @@ export default function ProductTable() {
       )}
       <h1 className="text-2xl font-bold mb-4">Product List</h1>
 
-      {/* Search Input */}
+      {/* Search Input — type a title, type/scan a barcode */}
       <div className="mb-4">
-        <input
-          type="text"
+        <BarcodeInput
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full border p-2"
-          placeholder="Search by title..."
+          onChange={setSearchQuery}
+          onSubmit={openByBarcode}
+          placeholder="Search by title or barcode..."
+          inputClassName=""
+          autoFocus
         />
       </div>
 
@@ -159,6 +178,7 @@ export default function ProductTable() {
         <thead>
           <tr className="bg-gray-100">
             <th className="border p-2">Title</th>
+            <th className="border p-2">Barcode</th>
             {/* <th className="border p-2">Pic</th> */}
             <th className="border p-2">Price (USD)</th>
             <th className="border p-2">Category</th>
@@ -223,6 +243,7 @@ export default function ProductTable() {
               <tr key={product.id} className={rowClass}>
 
                 <td className="border p-2">{product.title}</td>
+                <td className="border p-2 font-mono">{product.barcode || '—'}</td>
                 {/* <td className="border p-2">
                   {isVideo ? (
                     <video controls className="w-24 h-auto">
@@ -315,6 +336,13 @@ export default function ProductTable() {
               </tr>
             );
           })}
+          {products.length > 0 && filteredProducts.length === 0 && (
+            <tr>
+              <td colSpan={7} className="border p-4 text-center text-gray-500">
+                No products match “{searchQuery.trim()}”.
+              </td>
+            </tr>
+          )}
         </tbody>
 
       </table>
@@ -331,6 +359,7 @@ export default function ProductTable() {
  
  function EditProductForm({ product, onCancel, onSave }) {
 const [title, setTitle] = useState(product?.title || "");
+const [barcode, setBarcode] = useState(product?.barcode || "");
 const [description, setDescription] = useState(product?.description || "");
 const [price, setPrice] = useState(product?.price || 0);
 const [discountPrice, setDiscountPrice] = useState(product?.discount || "");
@@ -358,26 +387,15 @@ const [selectedFactory, setSelectedFactory] = useState(product?.factory || "");
   // ✅ NEW DATA STRUCTURE: { colorId: [ { size, qty, price } ] }
   const [colorSizeData, setColorSizeData] = useState({});
 
-  /** ✅ Fetch Colors & Sizes */
-  useEffect(() => {
-    async function loadColors() {
-      const res = await fetch("/api/color");
-      setColorOptions(await res.json());
-    }
-    async function loadSizes() {
-      const res = await fetch("/api/size");
-      setSizeOptions(await res.json());
-    }
-    loadColors();
-    loadSizes();
-  }, []);
-
   /** ✅ Pre-fill existing product color/sizes */
   useEffect(() => {
-    if (product.color) {
+    if (Array.isArray(product.color)) {
       const prepared = {};
 
+      // Only collection colors carry { id, sizes }; simple { name, hex }
+      // swatches have no sizes and must not crash the form.
       product.color.forEach((c) => {
+        if (!c?.id || !Array.isArray(c.sizes)) return;
         prepared[c.id] = c.sizes.map((s) => ({
           size: s.size,
           qty: s.qty,
@@ -388,16 +406,29 @@ const [selectedFactory, setSelectedFactory] = useState(product?.factory || "");
     }
   }, [product]);
 
-  /** ✅ Fetch Category / Sub / Factory */
+  /** ✅ Fetch Category / Sub / Factory (+ Colors & Sizes for collections) */
   useEffect(() => {
     fetchList("/api/category", setCategories);
     fetchList("/api/sub", setSubCategories);
     fetchList("/api/factory", setFactories);
+    fetchList("/api/color", setColorOptions);
+    fetchList("/api/size", setSizeOptions);
   }, []);
 
   const fetchList = async (url, setter) => {
-    const res = await fetch(url);
-    if (res.ok) setter(await res.json());
+    try {
+      const res = await fetch(url);
+      if (res.ok) setter(await res.json());
+    } catch (err) {
+      console.error(`Failed to load ${url}`, err);
+    }
+  };
+
+  // Keep the product's saved value selectable even if it's no longer in the
+  // list (renamed/deleted), so the dropdown still shows what's stored.
+  const withCurrent = (list, current) => {
+    const names = list.map((c) => c.name);
+    return current && !names.includes(current) ? [...names, current] : names;
   };
 
   /** ✅ Select / remove color */
@@ -435,6 +466,7 @@ const discountedPrice = Number(discountPrice).toFixed(2);
     ...product,
 
     title,
+    barcode,
     description,
 
     // ORIGINAL PRICE (or same as discount when no sale)
@@ -483,23 +515,26 @@ const discountedPrice = Number(discountPrice).toFixed(2);
       <label className="font-bold">Title</label>
       <input className="border p-2 w-full mb-3" value={title} onChange={(e) => setTitle(e.target.value)} />
 
+      <label className="font-bold">Barcode</label>
+      <BarcodeInput value={barcode} onChange={setBarcode} className="mb-3" />
+
       {/* CATEGORY */}
       <label className="font-bold">Category</label>
       <select className="border p-2 w-full mb-2" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
         <option value="">Select Category</option>
-        {categories.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+        {withCurrent(categories, product.category).map((n) => <option key={n} value={n}>{n}</option>)}
       </select>
 
       <label className="font-bold">Sub-Category</label>
       <select className="border p-2 w-full mb-2" value={selectedSub} onChange={(e) => setSelectedSub(e.target.value)}>
         <option value="">Select Sub-Category</option>
-        {subCategories.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+        {withCurrent(subCategories, product.sub).map((n) => <option key={n} value={n}>{n}</option>)}
       </select>
 
       <label className="font-bold">Brand</label>
       <select className="border p-2 w-full mb-4" value={selectedFactory} onChange={(e) => setSelectedFactory(e.target.value)}>
         <option value="">Select Factory</option>
-        {factories.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+        {withCurrent(factories, product.factory).map((n) => <option key={n} value={n}>{n}</option>)}
       </select>
 
       {/* TYPE */}

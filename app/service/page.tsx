@@ -59,6 +59,7 @@ const ManageService = () => {
       img: service.img,
     });
     setImg(service.img);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleEditSubmit = async (e) => {
@@ -81,12 +82,10 @@ const ManageService = () => {
         setEditMode(false);
         fetchServices();
       } else {
-        window.location.reload();
         const errorData = await res.json();
         setMessage(`Error: ${errorData.error}`);
       }
     } catch (error) {
-      window.location.reload();
       console.error('Error:', error);
       setMessage('An error occurred while updating the service.');
     }
@@ -119,10 +118,11 @@ const ManageService = () => {
   };
 
   useEffect(() => {
+    if (editMode) return; // editing uses `img` directly; keep the Add form clean
     if (Array.isArray(img) && img.length > 0) {
       setFormData((prev) => ({ ...prev, img }));
     }
-  }, [img]);
+  }, [img, editMode]);
 
   return (
     <div className="container mx-auto p-4">
@@ -156,10 +156,23 @@ const ManageService = () => {
             required
           />
         </div>
-        <Upload onImagesUpload={handleImgChange} />
+        <Upload key={editFormData.id || 'new'} onImagesUpload={handleImgChange} />
         <button type="submit" className="bg-blue-500 text-white px-4 py-2">
           {editMode ? 'Update Service' : 'Add Service'}
         </button>
+        {editMode && (
+          <button
+            type="button"
+            onClick={() => {
+              setEditMode(false);
+              setEditFormData({ id: '', title: '', description: '', img: [] });
+              setImg([]);
+            }}
+            className="bg-gray-500 text-white px-4 py-2 ml-2"
+          >
+            Cancel
+          </button>
+        )}
       </form>
 
       {message && <p className="mt-4">{message}</p>}

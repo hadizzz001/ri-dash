@@ -17,9 +17,13 @@ const [categoryId, setCategoryId] = useState('');
 useEffect(() => {
   const fetchCategories = async () => {
     try {
-      const res = await fetch('/api/cat');
-      const data = await res.json();
-      setCategories(data);
+      // Categories list + categories already used by items (see the edit form).
+      const [catRes, itemRes] = await Promise.all([fetch('/api/cat'), fetch('/api/products')]);
+      const cats = catRes.ok ? await catRes.json() : [];
+      const items = itemRes.ok ? await itemRes.json() : [];
+      setCategories(
+        Array.from(new Set([...cats.map((c) => c.title), ...items.map((i) => i.cat)])).filter(Boolean)
+      );
     } catch (err) {
       console.error('Failed to fetch categories', err);
     }
@@ -91,9 +95,9 @@ useEffect(() => {
   required
 >
   <option value="">Select Category</option>
-  {categories.map((cat) => (
-    <option key={cat.id} value={cat.title}>
-      {cat.title}
+  {categories.map((title) => (
+    <option key={title} value={title}>
+      {title}
     </option>
   ))}
 </select>

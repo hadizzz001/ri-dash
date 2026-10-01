@@ -55,6 +55,7 @@ const ManageCategory = () => {
       code: category.code,
       per: category.per,
     });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleEditSubmit = async (e) => {
@@ -135,6 +136,18 @@ const ManageCategory = () => {
         <button type="submit" className="bg-blue-500 text-white px-4 py-2">
           {editMode ? 'Update Code' : 'Add Code'}
         </button>
+        {editMode && (
+          <button
+            type="button"
+            onClick={() => {
+              setEditMode(false);
+              setEditFormData({ id: '', code: '', per: 0 });
+            }}
+            className="bg-gray-500 text-white px-4 py-2 ml-2"
+          >
+            Cancel
+          </button>
+        )}
       </form>
       {message && <p className="mt-4">{message}</p>}
 
