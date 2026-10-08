@@ -7,8 +7,8 @@ import 'react-quill/dist/quill.snow.css';
 import ExportToExcel from '../components/ExportToExcel';
 import BarcodeInput from '../components/BarcodeInput';
 
-const sameBarcode = (a, b) =>
-  !!a && !!b && String(a).replace(/\s+/g, '') === String(b).replace(/\s+/g, '');
+const barcodeKey = (v) => String(v ?? '').replace(/[\s-]+/g, '').toLowerCase();
+const sameBarcode = (a, b) => !!a && !!b && barcodeKey(a) === barcodeKey(b);
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
@@ -99,7 +99,7 @@ export default function ProductTable() {
     if (!query) return true;
     return (
       product.title.toLowerCase().includes(query) ||
-      String(product.barcode || '').toLowerCase().includes(query.replace(/\s+/g, ''))
+      barcodeKey(product.barcode).includes(barcodeKey(query))
     );
   };
 
