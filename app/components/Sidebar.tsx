@@ -74,7 +74,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
             </li>  
             <li>
               <a href="/app1" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                Manage Appointments
+                Booking Schedule
               </a>
             </li>  
             <li>

@@ -1,14 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
+
+// The login screen fills the window on its own: no sidebar, no side margin
+const BARE_PATHS = ["/", "/login"];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(true);
+  const pathname = usePathname();
 
   const toggleSidebar = () => {
     setIsOpen((prev) => !prev);
   };
+
+  if (BARE_PATHS.includes(pathname)) return <>{children}</>;
 
   return (
     <>

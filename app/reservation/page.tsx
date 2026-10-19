@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import {sendEmail} from '../api/sendEmail/sendEmail'
 const Page = () => {
   const [allTemp, setTemp] = useState<any[]>([]);
@@ -46,6 +46,21 @@ const Page = () => {
   // Older bookings were made before the salon / home choice existed
   const serviceLabel = (type?: string) =>
     type === "home" ? "Home" : type === "salon" ? "Salon" : "—";
+
+  const isCancelled = (post: any) => post.status === "cancelled";
+
+  // Only bookings outside Lebanon are confirmed with a 25% deposit
+  const depositOf = (post: any) =>
+    post.country === "Lebanon" ? 0 : Math.round(Number(post.total || 0) * 25) / 100;
+
+  const statusBadge = (post: any) =>
+    isCancelled(post) ? (
+      <span className="badge badge-danger bg-danger">Cancelled</span>
+    ) : post.paid ? (
+      <span className="badge badge-success bg-success">Paid</span>
+    ) : (
+      <span className="badge badge-secondary bg-secondary">Pending</span>
+    );
 
   const toggleExpand = (id: string) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
@@ -94,7 +109,7 @@ const handleMarkAsPaid = async (id: string) => {
 
       // 🔹 Send only what the email needs
       await sendEmail({
-        id: order.id,
+        orderId: order.reference || order.id,
         name: order.name,
         email: order.email,
         total: order.total,
@@ -139,6 +154,7 @@ const handleMarkAsPaid = async (id: string) => {
             <th className="border p-2">Total Amount</th>
             <th className="border p-2">Total Items</th>
             <th className="border p-2">Date</th>
+            <th className="border p-2">Status</th>
             <th className="border p-2">Action</th>
           </tr>
         </thead>
@@ -146,9 +162,9 @@ const handleMarkAsPaid = async (id: string) => {
         <tbody>
           {filteredData.length > 0 ? (
             filteredData.map((post) => (
-              <>
+              <Fragment key={post.id}>
                 {/* Main Row */}
-                <tr key={post.id}>
+                <tr className={isCancelled(post) ? "text-muted" : undefined}>
                   <td className="border p-2">{post.name}</td>
                   <td className="border p-2">{post.email}</td>
                   <td className="border p-2">{serviceLabel(post.serviceType)}</td>
@@ -159,6 +175,7 @@ const handleMarkAsPaid = async (id: string) => {
                   <td className="border p-2">
                     {post.date} {post.hour}
                   </td>
+                  <td className="border p-2">{statusBadge(post)}</td>
 <td className="border p-2 flex gap-2">
   <button
     onClick={() => toggleExpand(post.id)}
@@ -169,9 +186,9 @@ const handleMarkAsPaid = async (id: string) => {
 
   <button
     onClick={() => handleMarkAsPaid(post.id)}
-    disabled={post.paid}
+    disabled={post.paid || isCancelled(post)}
     className={`px-3 py-1 text-white ${
-      post.paid ? "bg-green-600 cursor-not-allowed" : "bg-yellow-500"
+      post.paid ? "bg-green-600 cursor-not-allowed" : isCancelled(post) ? "bg-gray-400 cursor-not-allowed" : "bg-yellow-500"
     }`}
   >
     {post.paid ? "Paid" : "Mark as Paid"}
@@ -190,8 +207,16 @@ const handleMarkAsPaid = async (id: string) => {
                 {/* Expanded Row */}
                 {expandedOrderId === post.id && (
                   <tr>
-                    <td colSpan={7} className="bg-gray-100 p-4">
+                    <td colSpan={8} className="bg-gray-100 p-4">
                       <div className="space-y-2">
+                        {isCancelled(post) && (
+                          <p className="text-danger">
+                            <strong>Cancelled</strong>
+                            {post.cancelledBy === "client" ? " by the client from their account" : ""}
+                            {post.cancelledAt ? ` on ${new Date(post.cancelledAt).toLocaleString()}` : ""} — the time is free again.
+                          </p>
+                        )}
+                        {post.reference && <p><strong>Reference:</strong> {post.reference}</p>}
                         <p><strong>Phone:</strong> {post.phone}</p>
                         <p><strong>Country:</strong> {post.country}</p>
                         <p><strong>City:</strong> {post.city}</p>
@@ -236,15 +261,21 @@ const handleMarkAsPaid = async (id: string) => {
                         <p className="font-bold mt-2">
                            Total: ${post.total}
                         </p>
+                        <p>
+                          {depositOf(post) > 0
+                            ? `Deposit to confirm (25%): $${depositOf(post).toFixed(2)}`
+                            : "No deposit (booking in Lebanon)"}
+                        </p>
+                        {post.notes && <p><strong>Notes:</strong> {post.notes}</p>}
                       </div>
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))
           ) : (
             <tr>
-              <td colSpan={7} className="text-center p-4">
+              <td colSpan={8} className="text-center p-4">
                 No matching records found.
               </td>
             </tr>

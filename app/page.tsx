@@ -1,103 +1,100 @@
 "use client";
 
 import axios, { AxiosError } from "axios";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 
+const LOGO =
+  "https://res.cloudinary.com/dtjcqfoxc/image/upload/v1746704732/cginuhwlfup2eayg6ehy.png";
+
+const inputClass =
+  "mb-4 block w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2.5 text-base text-white " +
+  "placeholder-gray-500 outline-none transition focus:border-[#ab695d] focus:ring-1 focus:ring-[#ab695d]";
+
+/** Dashboard login: a centred card that fits any screen, phone to desktop. */
 export default function Home() {
-  const { push } = useRouter();
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const form = event.currentTarget;
 
     const payload = {
-      username: event.currentTarget.username.value,
-      password: event.currentTarget.password.value,
+      username: form.username.value.trim(),
+      password: form.password.value,
     };
 
+    setBusy(true);
+    setError("");
     try {
-      const { data } = await axios.post("/api/auth/login", payload);
-
-      alert(JSON.stringify(data));
+      await axios.post("/api/auth/login", payload);
       window.location.replace("/dashboard");
     } catch (e) {
-      const error = e as AxiosError;
-
-      alert(error.message);
+      const status = (e as AxiosError).response?.status;
+      setError(
+        status === 401
+          ? "Wrong username or password. Please try again."
+          : "Could not sign in. Please check your connection and try again."
+      );
+      setBusy(false);
     }
   };
 
   return (
+    <main
+      className="flex min-h-screen w-full items-center justify-center bg-black px-4 py-10 sm:px-6 [@media(max-height:500px)]:py-4"
+      style={{ minHeight: "100svh" }}
+    >
+      <style dangerouslySetInnerHTML={{ __html: "body{background:#000}" }} />
 
+      <div className="w-full max-w-sm">
+        {/* hidden on very short screens (phones held sideways) so the form fits */}
+        <img src={LOGO} alt="Rafi Daham" className="mx-auto mb-8 block h-auto w-32 sm:w-40 [@media(max-height:500px)]:hidden" />
 
+        <form onSubmit={handleSubmit} className="rounded-xl bg-gray-900 p-6 shadow-lg sm:p-8">
+          <h1 className="mb-6 text-center text-xl font-semibold text-white">Login</h1>
 
-<>
-  <style
-    dangerouslySetInnerHTML={{
-      __html: `
-        body {
-          background: black !important;
-        }
-      `,
-    }}
-  />
+          <label htmlFor="username" className="mb-1.5 block text-sm text-gray-300">
+            Username
+          </label>
+          <input
+            id="username"
+            name="username"
+            type="text"
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            required
+            className={inputClass}
+          />
 
-  <section className="h-screen flex items-center justify-center bg-black px-4">
-    <div className="w-full max-w-md">
-      {/* Logo Section */}
-      <div className="flex justify-center mb-6">
-        <img
-          src="https://res.cloudinary.com/dtjcqfoxc/image/upload/v1746704732/cginuhwlfup2eayg6ehy.png"
-          className="w-40 sm:w-48"
-          alt="Sample image"
-        />
-      </div>
+          <label htmlFor="password" className="mb-1.5 block text-sm text-gray-300">
+            Password
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            className={inputClass}
+          />
 
-      {/* Form Section */}
-      <div className="bg-gray-900 p-6 rounded-lg shadow-lg">
-        <h2 className="text-white text-center text-xl font-semibold mb-4">Login</h2>
-        
-        <form onSubmit={handleSubmit}>
-          {/* Username Field */}
-          <div className="mb-4">
-            <input
-              type="text"
-              className="w-full rounded p-2 bg-gray-800 text-white outline-none border border-gray-700"
-              id="username"
-              name="username"
-              placeholder="Username"
-            />
-          </div>
+          {error && (
+            <p role="alert" className="mb-4 rounded-md bg-red-950/60 px-3 py-2 text-sm text-red-300">
+              {error}
+            </p>
+          )}
 
-          {/* Password Field */}
-          <div className="mb-4">
-            <input
-              type="password"
-              className="w-full rounded p-2 bg-gray-800 text-white outline-none border border-gray-700"
-              id="password"
-              name="password"
-              placeholder="Password"
-            />
-          </div>
-
-          {/* Login Button */}
-          <div className="text-center">
-            <button
-              type="submit"
-              className="w-full bg-[#ab695d] text-white py-2 rounded-md hover:bg-[#924f48] transition"
-            >
-              Login
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={busy}
+            className="mt-2 w-full rounded-md bg-[#ab695d] py-2.5 font-medium text-white transition hover:bg-[#924f48] disabled:cursor-wait disabled:opacity-70"
+          >
+            {busy ? "Signing in…" : "Login"}
+          </button>
         </form>
       </div>
-    </div>
-  </section>
-  <style
-        dangerouslySetInnerHTML={{
-          __html: "\n  #sidenavv{\n    display:none;\n} ",
-        }}
-      />
-</>
-
+    </main>
   );
 }

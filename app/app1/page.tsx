@@ -1,381 +1,108 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import DatePicker from 'react-datepicker';
-import "react-datepicker/dist/react-datepicker.css";
+import { useEffect, useState } from 'react';
+
+/**
+ * Booking schedule. The website opens booking automatically — every country,
+ * every day, 08:00 to midnight (my-app/app/lib/bookingOptions.js) — so there
+ * are no slots to add here any more: this page shows the rules the website
+ * applies and the upcoming appointments that hold a time.
+ */
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
 
 const ManageAppointments = () => {
-  const [appointments, setAppointments] = useState([]);
-  const [formData, setFormData] = useState({
-    country: '',
-    city: '',
-    dates: [], // array of { date, hours: [] }
-  });
-
-  const [currentDate, setCurrentDate] = useState({ date: null, hours: [] });
-  const [dateRange, setDateRange] = useState([null, null]); // [startDate, endDate]
-  const [isRangeMode, setIsRangeMode] = useState(false); // Toggle between single date and range mode
-const [availableHours] = useState([
-  '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00',
-  '13:00', '14:00', '15:00', '16:00', '17:00', '18:00',
-  '19:00', '20:00', '21:00', '22:00', '23:00', '00:00'
-]);
-
-  const [isCountryCityDisabled, setIsCountryCityDisabled] = useState(false);
-
-  const fetchAppointments = async () => {
-    try {
-      const res = await fetch('/api/apoint');
-      if (res.ok) {
-        const data = await res.json();
-        setAppointments(data);
-      }
-    } catch (err) {
-      console.error('Fetch failed:', err);
-    }
-  };
+  const [tax, setTax] = useState<number | null>(null);
+  const [orders, setOrders] = useState<any[] | null>(null);
 
   useEffect(() => {
-    fetchAppointments();
+    fetch('/api/tax')
+      .then((res) => res.json())
+      .then((data) => setTax(Number(data.percent) || 0))
+      .catch(() => setTax(null));
+    fetch('/api/order')
+      .then((res) => res.json())
+      .then((data) => setOrders(Array.isArray(data) ? data : []))
+      .catch(() => setOrders([]));
   }, []);
 
-  const toggleHour = (hour) => {
-    setCurrentDate((prev) => ({
-      ...prev,
-      hours: prev.hours.includes(hour)
-        ? prev.hours.filter((h) => h !== hour)
-        : [...prev.hours, hour],
-    }));
-  };
+  const today = todayISO();
+  const upcoming = (orders || [])
+    .filter((o) => o.date >= today && o.status !== 'cancelled')
+    .sort((a, b) => `${a.date} ${a.hour}`.localeCompare(`${b.date} ${b.hour}`));
 
-  const addDateEntry = () => {
-    if (!formData.country || !formData.city || currentDate.hours.length === 0) {
-      alert('Please fill out all required fields: country, city, date(s), and at least one hour.');
-      return;
-    }
-
-    if (isRangeMode) {
-      if (!dateRange[0] || !dateRange[1]) {
-        alert('Please select both start and end dates for the range.');
-        return;
-      }
-      // Add entries for each day in the range
-      const start = new Date(dateRange[0]);
-      const end = new Date(dateRange[1]);
-      const newDates = [];
-      
-      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        newDates.push({
-          date: new Date(d),
-          hours: currentDate.hours,
-        });
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        dates: [...prev.dates, ...newDates],
-      }));
-
-      setDateRange([null, null]);
-    } else {
-      if (!currentDate.date) {
-        alert('Please select a date.');
-        return;
-      }
-      setFormData((prev) => ({
-        ...prev,
-        dates: [...prev.dates, { ...currentDate }],
-      }));
-    }
-
-    setCurrentDate({ date: null, hours: [] });
-    setIsCountryCityDisabled(true); // Disable country and city after first date is added
-  };
-
-  const removeDateEntry = (index) => {
-    const updatedDates = formData.dates.filter((_, i) => i !== index);
-    setFormData((prev) => ({
-      ...prev,
-      dates: updatedDates,
-    }));
-
-    // Enable country and city if no dates are left
-    if (updatedDates.length === 0) {
-      setIsCountryCityDisabled(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-const payload = {
-  country: formData.country,
-  city: formData.city,
-dates: formData.dates.map((d) => ({
-  date: `${d.date.getFullYear()}-${String(d.date.getMonth() + 1).padStart(2, '0')}-${String(d.date.getDate()).padStart(2, '0')}`,
-  hours: d.hours.map((h) => ({ hour: h, booked: false })),
-})),
-
-};
-
-
-    try {
-      const res = await fetch('/api/apoint', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ info: payload }),
-      });
-
-      if (res.ok) {
-        setFormData({ country: '', city: '', dates: [] });
-        setCurrentDate({ date: null, hours: [] });
-        setIsCountryCityDisabled(false); // Re-enable country and city after submitting
-        fetchAppointments();
-      }
-    } catch (err) {
-      console.error('Submit failed:', err);
-    }
-  };
-
-const handleDeleteAppointment = async (appointmentId, dateIndex) => {
-  try {
-    const res = await fetch(`/api/apoint?id=${appointmentId}&dateIndex=${dateIndex}`, {
-      method: 'DELETE',
-    });
-
-    if (res.ok) {
-      fetchAppointments();
-    } else {
-      alert('Failed to delete appointment date');
-    }
-  } catch (err) {
-    console.error('Delete failed:', err);
-  }
-};
-
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // Reset time to 00:00 for today to ensure that only future dates can be selected.
+  const rules: [string, React.ReactNode][] = [
+    ['Countries', 'Every country. In Lebanon the client picks Beirut or their district; elsewhere they type their city.'],
+    ['Days', 'Every day, with no end date.'],
+    ['Hours', '08:00 to midnight — a start time every 30 minutes, the last one at 23:30.'],
+    ['Taken times', 'A time is taken once a client books it at that place, and free again if the booking is cancelled.'],
+    [
+      'Tax',
+      <>
+        Beirut 0% · everywhere else {tax === null ? '…' : `${tax}%`} (<a href="/tax" className="!text-blue-700 underline">change</a>)
+      </>,
+    ],
+    ['Deposit', 'None inside Lebanon · 25% of the total for bookings outside Lebanon.'],
+  ];
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Add Multiple Appointment Slots</h1>
-      <form onSubmit={handleSubmit} className="space-y-4 border p-4 rounded-md">
-        <div>
-          <label className="block mb-1">Country</label>
-          <input
-            type="text"
-            value={formData.country}
-            onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-            className="border p-2 w-full"
-            disabled={isCountryCityDisabled}
-            required
-          />
-        </div>
-        <div>
-          <label className="block mb-1">City</label>
-          <input
-            type="text"
-            value={formData.city}
-            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-            className="border p-2 w-full"
-            disabled={isCountryCityDisabled}
-            required
-          />
-        </div>
+    <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold mb-2">Booking Schedule</h1>
+      <p className="text-gray-600 mb-4">
+        Online booking is open automatically, so there are no dates or hours to add.
+      </p>
 
-        <div>
-          <label className="block mb-1">
-            <input
-              type="checkbox"
-              checked={isRangeMode}
-              onChange={(e) => {
-                setIsRangeMode(e.target.checked);
-                setCurrentDate({ date: null, hours: [] });
-                setDateRange([null, null]);
-              }}
-              className="mr-2"
-            />
-            Use Date Range (Select Multiple Days)
-          </label>
-        </div>
-
-        <div>
-          <label className="block mb-1">
-            {isRangeMode ? 'Select Date Range' : 'Select Date'}
-          </label>
-          {isRangeMode ? (
-            <div className="flex gap-2">
-              <DatePicker
-                selected={dateRange[0]}
-                onChange={(date) => {
-                  const localDate = new Date(
-                    date.getFullYear(),
-                    date.getMonth(),
-                    date.getDate()
-                  );
-                  setDateRange([localDate, dateRange[1]]);
-                }}
-                selectsStart
-                startDate={dateRange[0]}
-                endDate={dateRange[1]}
-                dateFormat="dd/MM/yyyy"
-                className="border p-2 flex-1"
-                minDate={today}
-                placeholderText="Start Date"
-              />
-              <DatePicker
-                selected={dateRange[1]}
-                onChange={(date) => {
-                  const localDate = new Date(
-                    date.getFullYear(),
-                    date.getMonth(),
-                    date.getDate()
-                  );
-                  setDateRange([dateRange[0], localDate]);
-                }}
-                selectsEnd
-                startDate={dateRange[0]}
-                endDate={dateRange[1]}
-                minDate={dateRange[0] || today}
-                dateFormat="dd/MM/yyyy"
-                className="border p-2 flex-1"
-                placeholderText="End Date"
-              />
+      <div className="border rounded-md p-4 mb-8 bg-gray-50">
+        <dl className="grid gap-x-6 gap-y-3 m-0" style={{ gridTemplateColumns: 'max-content 1fr' }}>
+          {rules.map(([label, text]) => (
+            <div key={label} className="contents">
+              <dt className="font-semibold">{label}</dt>
+              <dd className="m-0">{text}</dd>
             </div>
-          ) : (
-            <DatePicker
-              selected={currentDate.date}
-              onChange={(date) => {
-                const localDate = new Date(
-                  date.getFullYear(),
-                  date.getMonth(),
-                  date.getDate()
-                );
+          ))}
+        </dl>
+      </div>
 
-                setCurrentDate({
-                  ...currentDate,
-                  date: localDate,
-                });
-              }}
-              dateFormat="dd/MM/yyyy"
-              className="border p-2 w-full"
-              minDate={today}
-            />
-          )}
-        </div>
-
-        <div>
-          <label className="block mb-1">Select Hours for this date</label>
-          <div className="flex flex-wrap gap-2">
-            {availableHours.map((hour) => (
-              <button
-                key={hour}
-                type="button"
-                onClick={() => toggleHour(hour)}
-                className={`px-3 py-1 rounded-md border ${
-                  currentDate.hours.includes(hour) ? 'bg-green-500 text-white' : 'bg-gray-200'
-                }`}
-              >
-                {hour}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={addDateEntry}
-          className="bg-indigo-600 text-white px-4 py-2 rounded"
-        >
-          Add This Date
-        </button>
-
-        {formData.dates.length > 0 && (
-          <div className="mt-4">
-            <h3 className="font-semibold mb-2">Dates to be submitted:</h3>
-            {formData.dates.map((d, i) => (
-              <div key={i} className="mb-2 border p-2 rounded bg-gray-50">
-                <p>
-                  <strong>{d.date.toLocaleDateString()}</strong>
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {d.hours.map((h, idx) => (
-                    <span key={idx} className="bg-green-200 px-2 py-1 rounded">{h}</span>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeDateEntry(i)}
-                  className="text-red-500 mt-2"
-                >
-                  Remove this date
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {formData.dates.length > 0 && (
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
-            Submit Appointments
-          </button>
-        )}
-      </form>
-
-      <h2 className="text-xl font-bold mt-8">All Appointments</h2>
-      <table className="w-full mt-4 border border-collapse border-gray-300">
+      <h2 className="text-xl font-bold mb-2">Upcoming appointments</h2>
+      <p className="text-gray-600 mb-3">
+        Their times are taken. Payments, cancelled bookings and details are under{' '}
+        <a href="/reservation" className="!text-blue-700 underline">View Appointments</a>.
+      </p>
+      <table className="w-full border border-collapse border-gray-300">
         <thead>
           <tr>
-            <th className="border p-2">Country</th>
-            <th className="border p-2">City</th>
             <th className="border p-2">Date</th>
-            <th className="border p-2">Hours</th>
-            <th className="border p-2">Actions</th>
+            <th className="border p-2">Time</th>
+            <th className="border p-2">Location</th>
+            <th className="border p-2">Client</th>
+            <th className="border p-2">Service</th>
+            <th className="border p-2">Reference</th>
           </tr>
         </thead>
         <tbody>
-          {appointments.length > 0 ? (
-            appointments
-              .filter((item) => item.info && item.info.dates)
-              .flatMap((item, index) =>
-                item.info.dates.map((date, i) => (
-                  <tr key={`${index}-${i}`}>
-                    <td className="border p-2">{item.info.country}</td>
-                    <td className="border p-2">{item.info.city}</td>
-                   <td className="border p-2">
-  {new Date(date.date + 'T00:00:00').toLocaleDateString()}
-</td>
- <td className="border p-2">
-                      {date.hours.map((h, j) => (
-                        <span
-                          key={j}
-                          className={`inline-block mr-2 px-2 py-1 rounded ${
-                            h.booked ? 'bg-red-200' : 'bg-green-200'
-                          }`}
-                        >
-                          {h.hour}
-                        </span>
-                      ))}
-                    </td>
-                    <td className="border p-2">
-<button
-  onClick={() => handleDeleteAppointment(item.id, i)}
-  className="text-red-600"
->
-  Delete
-</button>
-
-                    </td>
-                  </tr>
-                ))
-              )
-          ) : (
+          {orders === null ? (
             <tr>
-              <td colSpan="5" className="border p-2 text-center">
-                No appointments found.
-              </td>
+              <td colSpan={6} className="border p-2 text-center">Loading…</td>
             </tr>
+          ) : upcoming.length === 0 ? (
+            <tr>
+              <td colSpan={6} className="border p-2 text-center">No upcoming appointments.</td>
+            </tr>
+          ) : (
+            upcoming.map((o) => (
+              <tr key={o.id}>
+                <td className="border p-2">{new Date(`${o.date}T00:00:00`).toLocaleDateString()}</td>
+                <td className="border p-2">{o.hour}</td>
+                <td className="border p-2">{o.city}, {o.country}</td>
+                <td className="border p-2">{o.name}</td>
+                <td className="border p-2">{o.serviceType === 'home' ? 'Home' : o.serviceType === 'salon' ? 'Salon' : '—'}</td>
+                <td className="border p-2">{o.reference || '—'}</td>
+              </tr>
+            ))
           )}
         </tbody>
       </table>

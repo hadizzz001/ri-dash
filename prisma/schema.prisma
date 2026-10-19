@@ -75,6 +75,16 @@ model Order {
   homeFee     String?
   taxPercent  String?
   tax         String?
+  // Booking reference (RD-XXXXXX), the client's notes and, when the client
+  // was signed in, their account (User id)
+  reference   String?
+  notes       String?
+  userId      String?
+  // "pending" or "cancelled"; a client can cancel from My account on the
+  // website (cancelledBy "client"), which frees the time and emails both sides
+  status      String?
+  cancelledAt DateTime?
+  cancelledBy String?
 }
 
 // Appointment tax: a single percentage, added to every booking total

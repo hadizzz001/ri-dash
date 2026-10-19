@@ -37,7 +37,9 @@ const ManageTax = () => {
     <div className="container mx-auto p-4 max-w-2xl">
       <h1 className="text-2xl font-bold mb-2">Appointment Tax</h1>
       <p className="text-gray-600 mb-4">
-        Added to the total of every appointment, for both salon and home service. Set 0 for no tax.
+        Added to the total of every appointment outside Beirut — the rest of Lebanon and every
+        other country — for both salon and home service. Appointments in Beirut are tax free (0%).
+        Set 0 for no tax anywhere.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
