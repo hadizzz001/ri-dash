@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 
 /**
- * Booking schedule. The website opens booking automatically — every country,
- * every day, 08:00 to midnight (my-app/app/lib/bookingOptions.js) — so there
- * are no slots to add here any more: this page shows the rules the website
- * applies and the upcoming appointments that hold a time.
+ * Booking schedule. The website opens booking automatically — Lebanon, KSA and
+ * Kuwait, every day, 08:00 to midnight (my-app/app/lib/bookingOptions.js) — so
+ * there are no slots to add here any more: this page shows the rules the
+ * website applies and the upcoming appointments that hold a time.
  */
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -36,7 +36,7 @@ const ManageAppointments = () => {
     .sort((a, b) => `${a.date} ${a.hour}`.localeCompare(`${b.date} ${b.hour}`));
 
   const rules: [string, React.ReactNode][] = [
-    ['Countries', 'Every country. In Lebanon the client picks Beirut or their district; elsewhere they type their city.'],
+    ['Countries', 'Lebanon (its cities and main towns), KSA (Riyadh, Jeddah) and Kuwait (Kuwait City).'],
     ['Days', 'Every day, with no end date.'],
     ['Hours', '08:00 to midnight — a start time every 30 minutes, the last one at 23:30.'],
     ['Taken times', 'A time is taken once a client books it at that place, and free again if the booking is cancelled.'],
