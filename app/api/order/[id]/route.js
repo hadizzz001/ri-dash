@@ -51,11 +51,19 @@ export async function DELETE(request, { params }) {
   const { id } = params;
 
   try {
-    
-     
-    await prisma.order.delete({
-      where: { id },
-    });
+    const order = await prisma.order.findUnique({ where: { id } });
+    if (!order) {
+      return new Response(JSON.stringify({ error: "Order not found" }), { status: 404 });
+    }
+
+    // The website reads taken times from the Booking behind this order, so
+    // delete both together: that frees the appointment's date and hour.
+    await prisma.$transaction([
+      prisma.order.delete({ where: { id } }),
+      ...(order.bookingId
+        ? [prisma.booking.deleteMany({ where: { id: order.bookingId } })]
+        : []),
+    ]);
 
     return new Response(
       JSON.stringify({ message: "Order deleted and stock restored" }),

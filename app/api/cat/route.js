@@ -46,10 +46,12 @@ export async function PATCH(req) {
 
     // Items store the title as text, so carry a rename over to them —
     // otherwise their edit dropdown no longer finds a matching option.
+    // A raw update, because prisma.product.updateMany fails on the seeded
+    // services' readable ids (see api/products/[id]/route.js).
     if (previous && title && previous.title !== title) {
-      await prisma.product.updateMany({
-        where: { cat: previous.title },
-        data: { cat: title },
+      await prisma.$runCommandRaw({
+        update: 'Product',
+        updates: [{ q: { cat: previous.title }, u: { $set: { cat: title } }, multi: true }],
       });
     }
     return new Response(JSON.stringify({ message: 'Category updated successfully', updatedCategory }), {

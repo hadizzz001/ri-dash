@@ -85,6 +85,15 @@ model Order {
   status      String?
   cancelledAt DateTime?
   cancelledBy String?
+  // The website's Booking this order copies (missing on older orders)
+  bookingId   String? @db.ObjectId
+}
+
+// The website's own record of an appointment (my-app/app/api/booking). The
+// times it shows as taken come from here, not from Order, so deleting an
+// order deletes its Booking too. Only the id is needed for that.
+model Booking {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 }
 
 // Appointment tax: a single percentage, added to every booking total
