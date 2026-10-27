@@ -28,6 +28,11 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
           <h3 style={{ textAlign: "center" }}>Dashboard</h3>
           <ul style={{ padding: 0, marginTop: "20px", listStyle: "none" }}>
             <li style={{ marginBottom: "15px" }}>
+              <a href="/reservation" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap", fontWeight: 700 }}>
+                Calendar (Appointments)
+              </a>
+            </li>
+            <li style={{ marginBottom: "15px" }}>
               <a href="/dashboard" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
                 All Items
               </a>

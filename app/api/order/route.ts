@@ -1,5 +1,7 @@
 import prisma from "../../../prisma";
 import { NextResponse } from "next/server";
+import { buildUpdate, findClash } from "./appointmentData";
+import { makeReference, newObjectId } from "../../utils/appointments";
 
 export async function main() {
     try {
@@ -27,6 +29,77 @@ export const GET = async (req: Request, res: NextResponse) => {
         return NextResponse.json({ message: "Error", err }, { status: 500 });
     } finally {
         await prisma.$disconnect();
+    }
+};
+
+export const dynamic = "force-dynamic";
+
+/**
+ * New appointment from the dashboard calendar. Stored like a website booking:
+ * a Booking document (which the website reads to hide taken times and send
+ * reminders) plus the Order the dashboard lists.
+ */
+export const POST = async (req: Request) => {
+    try {
+        const body = await req.json();
+        const required = ["name", "date", "hour", "country", "city", "cart"];
+        const missing = required.filter((k) => !body?.[k] || (Array.isArray(body[k]) && !body[k].length));
+        if (missing.length) {
+            return NextResponse.json({ error: `Missing: ${missing.join(", ")}` }, { status: 400 });
+        }
+
+        const { errors, order, booking } = buildUpdate(
+            { serviceType: "salon", status: "confirmed", phone: "", email: "", notes: "", ...body },
+            {}
+        );
+        if (errors.length) return NextResponse.json({ error: errors.join(". ") }, { status: 400 });
+
+        if (!body.force) {
+            const clash = await findClash(order as any);
+            if (clash) {
+                return NextResponse.json(
+                    { error: `${clash.name} is already booked in ${order.city} on ${order.date} at ${order.hour}.` },
+                    { status: 409 }
+                );
+            }
+        }
+
+        const reference = makeReference();
+        const bookingId = newObjectId();
+        const lang = ["ar", "fr"].includes(body.lang) ? body.lang : "en";
+        const now = new Date().toISOString();
+
+        delete booking.updatedAt;
+        await prisma.$runCommandRaw({
+            insert: "Booking",
+            documents: [
+                {
+                    ...booking,
+                    _id: { $oid: bookingId },
+                    reference,
+                    lang,
+                    paid: !!body.paid,
+                    remindersSent: [],
+                    source: "dashboard",
+                    createdAt: { $date: now },
+                },
+            ],
+        });
+
+        const created = await prisma.order.create({
+            data: {
+                ...(order as any),
+                reference,
+                lang,
+                paid: !!body.paid,
+                bookingId,
+            },
+        });
+
+        return NextResponse.json(created, { status: 201 });
+    } catch (err) {
+        console.error("Error creating appointment:", err);
+        return NextResponse.json({ error: "Could not create the appointment" }, { status: 500 });
     }
 };
 

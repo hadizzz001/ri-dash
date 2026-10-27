@@ -87,6 +87,10 @@ model Order {
   cancelledBy String?
   // The website's Booking this order copies (missing on older orders)
   bookingId   String? @db.ObjectId
+  // Team preference picked first on the website: "hijab" | "regular"
+  // (the calendar column on the dashboard); language of the client's emails
+  staff       String?
+  lang        String?
 }
 
 // The website's own record of an appointment (my-app/app/api/booking). The

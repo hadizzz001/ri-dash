@@ -28,7 +28,8 @@ export default function Home() {
     setError("");
     try {
       await axios.post("/api/auth/login", payload);
-      window.location.replace("/dashboard");
+      // The appointments calendar is the dashboard's home screen
+      window.location.replace("/reservation");
     } catch (e) {
       const status = (e as AxiosError).response?.status;
       setError(
