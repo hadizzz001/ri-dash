@@ -11,6 +11,8 @@ import {
   computeTotals,
   defaultTaxPercent,
 } from "../utils/appointments";
+import { buildUpdateMessage, messageLang, whatsappLink } from "../utils/appointmentMessage";
+import { Copy, MessageCircle, Send, X } from "lucide-react";
 
 export type Service = { id: string; title: string; cat: string; price: number; duration: number | null };
 
@@ -55,6 +57,7 @@ type Props = {
   draft: Draft;
   isNew: boolean;
   services: Service[];
+  orders?: any[];
   globalTax: number;
   saving: boolean;
   error: string;
@@ -73,6 +76,7 @@ export default function AppointmentDrawer({
   draft: initial,
   isNew,
   services,
+  orders = [],
   globalTax,
   saving,
   error,
@@ -87,6 +91,22 @@ export default function AppointmentDrawer({
   const [svcOpen, setSvcOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [msgOpen, setMsgOpen] = useState(false);
+  const [msgLang, setMsgLang] = useState<string>("en");
+  const [msgText, setMsgText] = useState("");
+
+  const openMessage = (lang = messageLang(d.lang)) => {
+    setMsgLang(lang);
+    setMsgText(buildUpdateMessage(d, lang));
+    setMsgOpen(true);
+    setMenu(false);
+  };
+
+  const sendMessage = (alsoSave: boolean) => {
+    window.open(whatsappLink(d.phone, msgText), "_blank", "noopener");
+    setMsgOpen(false);
+    if (alsoSave) onSave(d);
+  };
 
   useEffect(() => {
     setD(initial);
@@ -95,10 +115,14 @@ export default function AppointmentDrawer({
 
   // Esc closes
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (msgOpen) setMsgOpen(false);
+      else onClose();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, msgOpen]);
 
   const set = (patch: Partial<Draft>) => {
     setD((prev) => ({ ...prev, ...patch }));
@@ -168,7 +192,15 @@ export default function AppointmentDrawer({
 
   const removeLine = (i: number) => set({ cart: d.cart.filter((_, k) => k !== i) });
 
-  const hours = OPEN_HOURS.includes(d.hour) || !d.hour ? OPEN_HOURS : [d.hour, ...OPEN_HOURS];
+  // Times already taken that day by another live booking (same rule as the API)
+  const taken = new Set(
+    orders
+      .filter((o) => o.date === d.date && o.id !== d.id && o.status !== "cancelled")
+      .map((o) => o.hour)
+  );
+  const freeHours = OPEN_HOURS.filter((h) => !taken.has(h));
+  const hours = !d.hour || freeHours.includes(d.hour) ? freeHours : [d.hour, ...freeHours];
+  const hourTaken = !!d.hour && taken.has(d.hour);
   const initials = (d.name || "?")
     .split(/\s+/)
     .filter(Boolean)
@@ -265,9 +297,13 @@ export default function AppointmentDrawer({
                   {hours.map((h) => (
                     <option key={h} value={h}>
                       {h}
+                      {h === d.hour && hourTaken ? " (already booked)" : ""}
                     </option>
                   ))}
                 </select>
+                {freeHours.length === 0 && (
+                  <small style={{ color: "#dc2626" }}>No free times on this day.</small>
+                )}
               </div>
               <div className="fz-field">
                 <label htmlFor="fz-staff">Team member</label>
@@ -503,6 +539,9 @@ export default function AppointmentDrawer({
                 More ▾
               </button>
               {menu && (
+                <div style={{ position: "fixed", inset: 0, zIndex: 1140 }} onClick={() => setMenu(false)} />
+              )}
+              {menu && (
                 <div className="fz-menu-list" onMouseLeave={() => setMenu(false)}>
                   {!d.paid && (
                     <button type="button" onClick={() => (setMenu(false), onMarkPaid(d))}>
@@ -522,11 +561,9 @@ export default function AppointmentDrawer({
                     Mark as no-show
                   </button>
                   {d.phone && (
-                    <button
-                      type="button"
-                      onClick={() => window.open(`https://wa.me/${d.phone.replace(/\D/g, "")}`, "_blank", "noopener")}
-                    >
-                      Message on WhatsApp
+                    <button type="button" onClick={() => openMessage()}>
+                      <MessageCircle size={14} style={{ verticalAlign: "-2px", marginRight: 6 }} />
+                      Send booking details on WhatsApp
                     </button>
                   )}
                   <button
@@ -544,11 +581,84 @@ export default function AppointmentDrawer({
             </div>
           )}
 
+          {!isNew && d.phone && (
+            <button type="button" className="fz-btn" onClick={() => openMessage()} title="Send the full booking details to the client">
+              <MessageCircle size={16} style={{ verticalAlign: "-3px", marginRight: 6 }} />
+              Message client
+            </button>
+          )}
+
           <button type="button" className="fz-btn fz-btn--dark" disabled={saving} onClick={() => onSave(d)}>
             {saving ? "Saving…" : isNew ? "Create appointment" : "Save changes"}
           </button>
         </div>
       </aside>
+
+      {msgOpen && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 5000, background: "rgba(0,0,0,.45)", display: "grid", placeItems: "center", padding: 16 }}
+          onClick={() => setMsgOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Message the client"
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "#fff", borderRadius: 14, width: "min(560px, 100%)", maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 20px 50px rgba(0,0,0,.25)" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 18px", borderBottom: "1px solid #eee" }}>
+              <b style={{ flex: 1 }}>Send booking details to {d.name || "client"}</b>
+              <div className="fz-chips">
+                {[
+                  ["en", "EN"],
+                  ["ar", "عربي"],
+                  ["fr", "FR"],
+                ].map(([code, label]) => (
+                  <button
+                    type="button"
+                    key={code}
+                    className={`fz-chip ${msgLang === code ? "is-on" : ""}`}
+                    onClick={() => openMessage(code as any)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <button type="button" className="fz-x" onClick={() => setMsgOpen(false)} aria-label="Close">
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ padding: 18, overflow: "auto" }}>
+              <p style={{ fontSize: 12, color: "#6b7280", marginTop: 0 }}>
+                To {d.phone}. You can edit the text before sending.
+              </p>
+              <textarea
+                value={msgText}
+                dir={msgLang === "ar" ? "rtl" : "ltr"}
+                onChange={(e) => setMsgText(e.target.value)}
+                style={{ width: "100%", minHeight: 340, fontFamily: "inherit", fontSize: 14, lineHeight: 1.5, padding: 12, border: "1px solid #e5e7eb", borderRadius: 10, whiteSpace: "pre-wrap" }}
+              />
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap", padding: "12px 18px", borderTop: "1px solid #eee" }}>
+              <button type="button" className="fz-btn" onClick={() => navigator.clipboard?.writeText(msgText)}>
+                <Copy size={15} style={{ verticalAlign: "-3px", marginRight: 6 }} />
+                Copy
+              </button>
+              {dirty ? (
+                <button type="button" className="fz-btn fz-btn--dark" disabled={saving} onClick={() => sendMessage(true)}>
+                  <Send size={15} style={{ verticalAlign: "-3px", marginRight: 6 }} />
+                  Save changes & send on WhatsApp
+                </button>
+              ) : (
+                <button type="button" className="fz-btn fz-btn--dark" onClick={() => sendMessage(false)}>
+                  <Send size={15} style={{ verticalAlign: "-3px", marginRight: 6 }} />
+                  Send on WhatsApp
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

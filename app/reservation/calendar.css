@@ -851,6 +851,53 @@
 .fz-menu-list button:hover {
   background: var(--fz-soft, #f7f7f8);
 }
+.fz-menu-list {
+  z-index: 1150;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* Icon + label on one line (Tailwind makes svg display:block) */
+.fz-drawer .fz-btn,
+.fz-menu-list button,
+.fz-drawer ~ div .fz-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.fz-menu-list button {
+  display: flex;
+  width: 100%;
+}
+.fz-drawer .fz-btn svg,
+.fz-menu-list button svg,
+.fz-drawer ~ div .fz-btn svg {
+  flex-shrink: 0;
+  margin: 0 !important;
+}
+
+@media (max-width: 640px) {
+  .fz-dfoot {
+    flex-wrap: wrap;
+    padding: 12px 14px;
+  }
+  /* Bottom sheet instead of a dropdown that runs off-screen */
+  .fz-menu-list {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    min-width: 0;
+    padding: 8px;
+    border-radius: 16px;
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.25);
+  }
+  .fz-menu-list button {
+    padding: 14px 12px;
+    font-size: 15px;
+  }
+}
 
 /* ------------------------------------------------- service search */
 .fz-svcpick {

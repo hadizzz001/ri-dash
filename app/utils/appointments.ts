@@ -14,7 +14,8 @@ export const DEPOSIT_RATE = 0.25;
 
 export const STAFF = [
   { id: "hijab", name: "Hijab", color: "#a5b4fc" },
-  { id: "regular", name: "No preference", color: "#fdba74" },
+  { id: "rafi", name: "Rafi", color: "#86efac" },
+  { id: "regular", name: "General", color: "#fdba74" },
 ] as const;
 
 export const UNASSIGNED = { id: "unassigned", name: "Unassigned", color: "#cbd5e1" };

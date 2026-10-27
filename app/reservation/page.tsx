@@ -896,6 +896,7 @@ export default function AppointmentsCalendar() {
           draft={drawer.draft}
           isNew={drawer.isNew}
           services={services}
+          orders={orders}
           globalTax={globalTax}
           saving={saving}
           error={drawerError}
