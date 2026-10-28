@@ -331,6 +331,7 @@ export default function AppointmentsCalendar() {
         paid: !!o.paid,
         notes: o.notes || "",
         taxPercent: o.taxPercent != null ? Number(o.taxPercent) || 0 : 0,
+        discount: o.discount != null && Number(o.discount) ? Number(o.discount) : "",
         cart: Array.isArray(o.cart) ? o.cart.map((c: any) => ({ ...c })) : [],
         cancelledAt: o.cancelledAt || null,
         cancelledBy: o.cancelledBy || null,
@@ -386,14 +387,17 @@ export default function AppointmentsCalendar() {
         paid: d.paid,
         notes: d.notes,
         taxPercent: Number(d.taxPercent) || 0,
+        ...(isNew ? {} : { discount: Number(d.discount) || 0 }),
         cart,
       });
       upsert(saved);
       setDrawer(null);
       flash(isNew ? "Appointment created" : d.status === "cancelled" ? "Appointment cancelled" : "Appointment saved");
       if (saved?.date && saved.date !== date && view !== "list") setDate(saved.date);
+      return true;
     } catch (e: any) {
       setDrawerError(e.message);
+      return false;
     } finally {
       setSaving(false);
     }

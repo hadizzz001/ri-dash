@@ -13,6 +13,7 @@ import {
 } from "../utils/appointments";
 import { buildUpdateMessage, messageLang, whatsappLink } from "../utils/appointmentMessage";
 import { Copy, MessageCircle, Send, X } from "lucide-react";
+import { sendUpdateEmail } from "../api/sendEmail/sendUpdateEmail";
 
 export type Service = { id: string; title: string; cat: string; price: number; duration: number | null };
 
@@ -32,6 +33,7 @@ export type Draft = {
   paid: boolean;
   notes: string;
   taxPercent: number | string;
+  discount?: number | string;
   cart: { id?: string; title: string; cat?: string; price: number | string; qty: number | string; duration?: number | string | null }[];
   cancelledBy?: string | null;
   cancelledAt?: string | null;
@@ -62,7 +64,7 @@ type Props = {
   saving: boolean;
   error: string;
   onClose: () => void;
-  onSave: (draft: Draft) => void;
+  onSave: (draft: Draft) => Promise<boolean | void> | void;
   onMarkPaid: (draft: Draft) => void;
   onDelete: (draft: Draft) => void;
 };
@@ -102,10 +104,47 @@ export default function AppointmentDrawer({
     setMenu(false);
   };
 
+  const [emailNote, setEmailNote] = useState("");
+
   const sendMessage = (alsoSave: boolean) => {
     window.open(whatsappLink(d.phone, msgText), "_blank", "noopener");
+    // Every update sent on WhatsApp also goes to the client's email
+    if (d.email) {
+      sendUpdateEmail({ email: d.email, name: d.name, reference: d.reference, message: msgText, lang: msgLang })
+        .then(() => setEmailNote(`Update emailed to ${d.email}`))
+        .catch((e: any) => {
+          console.error("Update email failed:", e);
+          setEmailNote("WhatsApp opened, but the email could not be sent.");
+        });
+    }
     setMsgOpen(false);
     if (alsoSave) onSave(d);
+  };
+
+  // Saving an edited appointment also sends the full update on WhatsApp + email
+  const saveAndNotify = async (target: Draft = d) => {
+    const d = target;
+    const ready =
+      d.name.trim() && d.date && d.hour && d.country && d.city.trim() &&
+      d.cart.some((c) => String(c.title || "").trim());
+    const notify = !isNew && ready;
+    // Open the WhatsApp tab now (inside the click, so it isn't blocked as a
+    // popup) and only point it at WhatsApp once the save succeeded
+    const win = notify && d.phone ? window.open("about:blank", "_blank") : null;
+    const snapshot = d;
+    const ok = await onSave(d);
+    if (!notify || ok !== true) {
+      win?.close();
+      return;
+    }
+    const lang = messageLang(snapshot.lang);
+    const text = buildUpdateMessage(snapshot, lang);
+    if (win) win.location.href = whatsappLink(snapshot.phone, text);
+    if (snapshot.email) {
+      sendUpdateEmail({ email: snapshot.email, name: snapshot.name, reference: snapshot.reference, message: text, lang }).catch(
+        (e: any) => console.error("Update email failed:", e)
+      );
+    }
   };
 
   useEffect(() => {
@@ -150,6 +189,7 @@ export default function AppointmentDrawer({
     city: d.city,
     serviceType: d.serviceType,
     taxPercent: Number(d.taxPercent) || 0,
+    discount: isNew ? 0 : Number(d.discount) || 0,
   });
   const minutes = cart.reduce((a, c) => a + (Number(c.duration) || 0) * c.qty, 0);
   const st = statusOf(d.status);
@@ -253,6 +293,7 @@ export default function AppointmentDrawer({
             </div>
           )}
           {d.paid && <div className="fz-alert fz-alert--info">Paid ✓</div>}
+          {emailNote && <div className="fz-alert fz-alert--info">{emailNote}</div>}
 
           {/* Client */}
           <section className="fz-sec">
@@ -496,6 +537,20 @@ export default function AppointmentDrawer({
             {d.country === LEBANON && d.city.trim().toLowerCase() === "beirut" && (
               <p style={{ fontSize: 12, color: "#6b7280", marginTop: -4 }}>Beirut is tax free.</p>
             )}
+            {!isNew && (
+              <div className="fz-field">
+                <label htmlFor="fz-discount">Discount ($)</label>
+                <input
+                  id="fz-discount"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="0.00"
+                  value={d.discount ?? ""}
+                  onChange={(e) => set({ discount: e.target.value })}
+                />
+              </div>
+            )}
             <div className="fz-sum">
               <div>
                 <span>Subtotal</span>
@@ -505,6 +560,12 @@ export default function AppointmentDrawer({
                 <div>
                   <span>Home service (×2)</span>
                   <span>{money(totals.homeFee)}</span>
+                </div>
+              )}
+              {totals.discount > 0 && (
+                <div style={{ color: "#16a34a" }}>
+                  <span>Discount</span>
+                  <span>-{money(totals.discount)}</span>
                 </div>
               )}
               {totals.tax > 0 && (
@@ -549,8 +610,8 @@ export default function AppointmentDrawer({
                     </button>
                   )}
                   {d.status !== "cancelled" ? (
-                    <button type="button" onClick={() => (setMenu(false), onSave({ ...d, status: "cancelled" }))}>
-                      Cancel appointment
+                    <button type="button" onClick={() => (setMenu(false), saveAndNotify({ ...d, status: "cancelled" }))}>
+                      Cancel appointment & notify client
                     </button>
                   ) : (
                     <button type="button" onClick={() => (setMenu(false), onSave({ ...d, status: "pending" }))}>
@@ -588,8 +649,8 @@ export default function AppointmentDrawer({
             </button>
           )}
 
-          <button type="button" className="fz-btn fz-btn--dark" disabled={saving} onClick={() => onSave(d)}>
-            {saving ? "Saving…" : isNew ? "Create appointment" : "Save changes"}
+          <button type="button" className="fz-btn fz-btn--dark" disabled={saving} onClick={() => saveAndNotify()} title={isNew ? undefined : "Saves and sends the update to the client on WhatsApp and email"}>
+            {saving ? "Saving…" : isNew ? "Create appointment" : "Save & notify client"}
           </button>
         </div>
       </aside>
@@ -630,7 +691,7 @@ export default function AppointmentDrawer({
             </div>
             <div style={{ padding: 18, overflow: "auto" }}>
               <p style={{ fontSize: 12, color: "#6b7280", marginTop: 0 }}>
-                To {d.phone}. You can edit the text before sending.
+                To {d.phone}{d.email ? ` · also emailed to ${d.email}` : ""}. You can edit the text before sending.
               </p>
               <textarea
                 value={msgText}

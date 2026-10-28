@@ -84,15 +84,23 @@ export const defaultTaxPercent = (country: string, city: string, percent: number
 
 export function computeTotals(
   cart: CartItem[],
-  { country, city, serviceType, taxPercent }: { country: string; city: string; serviceType: string; taxPercent: number }
+  {
+    country,
+    city,
+    serviceType,
+    taxPercent,
+    discount = 0,
+  }: { country: string; city: string; serviceType: string; taxPercent: number; discount?: number }
 ) {
   const subtotal = round2(cart.reduce((a, i) => a + Number(i.price) * (Number(i.qty) || 1), 0));
   const homeFee = serviceType === "home" && country === LEBANON ? subtotal : 0;
+  // Discount (fixed $ amount) is taken off before tax, never below zero
+  const disc = round2(Math.min(Math.max(0, Number(discount) || 0), subtotal + homeFee));
   const rate = defaultTaxPercent(country, city, taxPercent);
-  const tax = round2(((subtotal + homeFee) * rate) / 100);
-  const total = round2(subtotal + homeFee + tax);
+  const tax = round2(((subtotal + homeFee - disc) * rate) / 100);
+  const total = round2(subtotal + homeFee - disc + tax);
   const deposit = country && country !== LEBANON ? round2(total * DEPOSIT_RATE) : 0;
-  return { subtotal, homeFee, taxPercent: rate, tax, total, deposit };
+  return { subtotal, homeFee, discount: disc, taxPercent: rate, tax, total, deposit };
 }
 
 /** Total minutes of a cart (60 when the services have no duration). */

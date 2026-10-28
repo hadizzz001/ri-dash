@@ -75,6 +75,8 @@ model Order {
   homeFee     String?
   taxPercent  String?
   tax         String?
+  // Discount ($) given from the dashboard on an existing appointment
+  discount    String?
   // Booking reference (RD-XXXXXX), the client's notes and, when the client
   // was signed in, their account (User id)
   reference   String?

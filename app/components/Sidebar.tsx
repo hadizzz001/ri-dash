@@ -1,205 +1,152 @@
 "use client";
 
-import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import { usePathname } from "next/navigation";
+import {
+  CalendarDays,
+  LayoutGrid,
+  PlusSquare,
+  Scissors,
+  Database,
+  FolderPlus,
+  Puzzle,
+  Video,
+  Newspaper,
+  Heading,
+  Clock,
+  ListChecks,
+  Percent,
+  Package,
+  PackagePlus,
+  Tags,
+  Layers,
+  Factory,
+  Ticket,
+  ShoppingBag,
+  Star,
+  Users,
+  Image as ImageIcon,
+  PanelTop,
+  HardDriveDownload,
+  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
 
 interface SidebarProps {
   isOpen: boolean;
   toggleSidebar: () => void;
 }
 
+const LOGO_URL =
+  "https://res.cloudinary.com/dgi9mfldc/image/upload/v1766829842/black123_fbqmfb.webp";
+
+type Item = { href: string; label: string; icon: any };
+
+const GROUPS: { title: string; items: Item[] }[] = [
+  {
+    title: "Appointments",
+    items: [
+      { href: "/reservation", label: "Calendar", icon: CalendarDays },
+      { href: "/app1", label: "Booking Schedule", icon: Clock },
+      { href: "/reservation", label: "View Appointments", icon: ListChecks },
+      { href: "/tax", label: "Appointment Tax", icon: Percent },
+    ],
+  },
+  {
+    title: "Services",
+    items: [
+      { href: "/dashboard", label: "All Items", icon: LayoutGrid },
+      { href: "/products", label: "Add Item", icon: PlusSquare },
+      { href: "/service", label: "Add Service", icon: Scissors },
+      { href: "/servicedata", label: "Services Data", icon: Database },
+      { href: "/cat", label: "Add Category", icon: FolderPlus },
+      { href: "/ext", label: "Add Extension", icon: Puzzle },
+    ],
+  },
+  {
+    title: "Content",
+    items: [
+      { href: "/vid", label: "Add Video", icon: Video },
+      { href: "/new", label: "Add News", icon: Newspaper },
+      { href: "/new1", label: "News Title", icon: Heading },
+      { href: "/ads", label: "Ads Images", icon: ImageIcon },
+      { href: "/aboutbanner", label: "About Banner", icon: PanelTop },
+    ],
+  },
+  {
+    title: "Shop",
+    items: [
+      { href: "/dashboard1", label: "All Products", icon: Package },
+      { href: "/products1", label: "Add Product", icon: PackagePlus },
+      { href: "/category", label: "Add Product Category", icon: Tags },
+      { href: "/sub", label: "Add Sub-category", icon: Layers },
+      { href: "/factory", label: "Add Brand", icon: Factory },
+      { href: "/offer", label: "Add Code", icon: Ticket },
+      { href: "/reservation1", label: "Orders", icon: ShoppingBag },
+      { href: "/reviews", label: "Product Reviews", icon: Star },
+      { href: "/users", label: "Customers", icon: Users },
+    ],
+  },
+  {
+    title: "System",
+    items: [{ href: "/api/backup", label: "Backup", icon: HardDriveDownload }],
+  },
+];
+
 export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
+  const pathname = usePathname();
+
   return (
-    <div id="sidenavv" style={{ position: "relative" }}>
-      {/* Sidebar */}
-      <nav
-        style={{
-          background: "#343a40",
-          color: "white",
-          height: "100vh",
-          position: "fixed",
-          width: isOpen ? "280px" : "0",
-          left: isOpen ? "0" : "-280px",
-          overflow: "hidden",
-          transition: "left 0.3s ease-in-out",
-          padding: isOpen ? "16px" : "0",
-        }}
-      >
-        <div>
-          <h3 style={{ textAlign: "center" }}>Dashboard</h3>
-          <ul style={{ padding: 0, marginTop: "20px", listStyle: "none" }}>
-            <li style={{ marginBottom: "15px" }}>
-              <a href="/reservation" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap", fontWeight: 700 }}>
-                Calendar (Appointments)
-              </a>
-            </li>
-            <li style={{ marginBottom: "15px" }}>
-              <a href="/dashboard" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                All Items
-              </a>
-            </li>
-            <li>
-              <a href="/products" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                Add Item
-              </a>
-            </li>    
-            <li>
-              <a href="/service" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                Add Service
-              </a>
-            </li>  
-            <li>
-              <a href="/servicedata" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                Services Data
-              </a>
-            </li>  
-            <li>
-              <a href="/cat" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                Add Categroy
-              </a>
-            </li>  
-            <li>
-              <a href="/ext" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                Add Extension
-              </a>
-            </li>  
-            <li>
-              <a href="/vid" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                Add Video
-              </a>
-            </li>  
-            <li>
-              <a href="/new" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                Add News
-              </a>
-            </li>  
-            <li>
-              <a href="/new1" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                News Title
-              </a>
-            </li>  
-            <li>
-              <a href="/app1" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                Booking Schedule
-              </a>
-            </li>  
-            <li>
-              <a href="/reservation" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                View Appointments
-              </a>
-            </li>
-            <li>
-              <a href="/tax" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                Appointment Tax
-              </a>
-            </li>
+    <div id="sidenavv">
+      {/* Backdrop on small screens */}
+      {isOpen && <div className="rd-side-backdrop" onClick={toggleSidebar} />}
 
-            
+      <nav className={`rd-side ${isOpen ? "is-open" : ""}`} aria-label="Dashboard menu" aria-hidden={!isOpen}>
+        <div className="rd-side__brand">
+          <a href="/reservation" aria-label="Rafi Daham — dashboard">
+            <img src={LOGO_URL} alt="Rafi Daham" />
+          </a>
+          <button type="button" className="rd-side__close" onClick={toggleSidebar} aria-label="Hide menu" title="Hide menu">
+            <PanelLeftClose size={18} />
+          </button>
+        </div>
 
+        <div className="rd-side__scroll">
+          {GROUPS.map((g) => (
+            <div className="rd-side__group" key={g.title}>
+              <div className="rd-side__title">{g.title}</div>
+              {g.items.map(({ href, label, icon: Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  className={`rd-side__link ${pathname === href && label !== "View Appointments" ? "is-active" : ""}`}
+                >
+                  <Icon size={17} strokeWidth={1.8} />
+                  <span>{label}</span>
+                </a>
+              ))}
+            </div>
+          ))}
+        </div>
 
-
-
-
-            <li  >
-              <a href="/dashboard1" style={{ color: "white", textDecoration: "none" }}>
-                All Products
-              </a>
-            </li>
-            <li>
-              <a href="/products1" style={{ color: "white", textDecoration: "none" }}>
-                Add Product
-              </a>
-            </li>
-            <li>
-              <a href="/category" style={{ color: "white", textDecoration: "none" }}>
-                Add Product Category
-              </a>
-            </li>
-            <li>
-              <a href="/sub" style={{ color: "white", textDecoration: "none" }}>
-                Add Sub-category
-              </a>
-            </li>
-            <li>
-              <a href="/factory" style={{ color: "white", textDecoration: "none" }}>
-                Add Brand
-              </a>
-            </li>
-
-            <li>
-              <a href="/offer" style={{ color: "white", textDecoration: "none" }}>
-                Add Code
-              </a>
-            </li>
-            <li>
-              <a href="/reservation1" style={{ color: "white", textDecoration: "none" }}>
-                Orders
-              </a>
-            </li>
-            <li>
-              <a href="/reviews" style={{ color: "white", textDecoration: "none" }}>
-                Product Reviews
-              </a>
-            </li>
-            <li>
-              <a href="/users" style={{ color: "white", textDecoration: "none" }}>
-                Customers
-              </a>
-            </li>
-            <li>
-              <a href="/ads" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                Ads Images
-              </a>
-            </li>
-            <li>
-              <a href="/aboutbanner" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                About Banner
-              </a>
-            </li>
- 
-            <li>
-              <a
-                href="/api/backup"
-                style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}
-              >
-                Backup
-              </a>
-            </li>
-            <li>
-              <a href="/" style={{ color: "white", textDecoration: "none", whiteSpace: "nowrap" }}>
-                Logout
-              </a>
-            </li>
-          </ul>
+        <div className="rd-side__foot">
+          <a href="/" className="rd-side__link rd-side__logout">
+            <LogOut size={17} strokeWidth={1.8} />
+            <span>Logout</span>
+          </a>
         </div>
       </nav>
 
-      {/* Toggle Button */}
+      {/* Floating "show menu" button while the sidebar is hidden */}
       <button
+        type="button"
+        className={`rd-side__open ${isOpen ? "is-hidden" : ""}`}
         onClick={toggleSidebar}
-        style={{
-          position: "fixed",
-          top: "20px",
-          left: isOpen ? "260px" : "10px",
-          background: "#000",
-          color: "white",
-          border: "none",
-          cursor: "pointer",
-          padding: "8px 12px",
-          fontSize: "18px",
-          transition: "left 0.3s ease-in-out",
-          borderRadius: "5px",
-          zIndex: 1000,
-        }}
+        aria-label="Show menu"
+        title="Show menu"
       >
-        {isOpen ? <FaArrowLeft /> : <FaArrowRight />}
+        <PanelLeftOpen size={18} />
       </button>
-
-      <style
-  dangerouslySetInnerHTML={{
-    __html: "\n  a {\n    color: #fff !important;\n}\n"
-  }}
-/>
-
     </div>
   );
 }

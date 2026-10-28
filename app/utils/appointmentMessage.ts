@@ -10,6 +10,7 @@ type Lang = "en" | "ar" | "fr";
 const T = {
   en: {
     updated: "Your booking at Rafi Daham Hair Beauty Salon has been updated.",
+    cancelledMsg: "Your booking at Rafi Daham Hair Beauty Salon has been cancelled.",
     details: "Booking Details:",
     reference: "Booking reference",
     name: "Name",
@@ -26,6 +27,7 @@ const T = {
     services: "Services",
     subtotal: "Subtotal",
     homeFee: "Home service (×2)",
+    discount: "Discount",
     tax: "Tax",
     total: "Total",
     deposit: "Deposit to confirm (25%)",
@@ -44,6 +46,7 @@ const T = {
   },
   ar: {
     updated: "تم تعديل حجزك لدى صالون رافي دهام للشعر والتجميل.",
+    cancelledMsg: "تم إلغاء حجزك لدى صالون رافي دهام للشعر والتجميل.",
     details: "تفاصيل الحجز:",
     reference: "رقم الحجز",
     name: "الاسم",
@@ -60,6 +63,7 @@ const T = {
     services: "الخدمات",
     subtotal: "المجموع الفرعي",
     homeFee: "خدمة منزلية (ضعف السعر)",
+    discount: "الخصم",
     tax: "الضريبة",
     total: "الإجمالي",
     deposit: "العربون للتأكيد (25%)",
@@ -74,6 +78,7 @@ const T = {
   },
   fr: {
     updated: "Votre réservation au salon Rafi Daham Hair Beauty a été modifiée.",
+    cancelledMsg: "Votre réservation au salon Rafi Daham Hair Beauty a été annulée.",
     details: "Détails de la réservation :",
     reference: "Référence",
     name: "Nom",
@@ -90,6 +95,7 @@ const T = {
     services: "Services",
     subtotal: "Sous-total",
     homeFee: "Service à domicile (×2)",
+    discount: "Remise",
     tax: "Taxe",
     total: "Total",
     deposit: "Acompte de confirmation (25 %)",
@@ -136,6 +142,7 @@ export function buildUpdateMessage(b: any, langIn?: string | null): string {
     city: b.city,
     serviceType: b.serviceType,
     taxPercent: Number(b.taxPercent) || 0,
+    discount: Number(b.discount) || 0,
   });
   const minutes = cart.reduce((a: number, c: any) => a + (c.duration || 0) * c.qty, 0);
 
@@ -145,10 +152,11 @@ export function buildUpdateMessage(b: any, langIn?: string | null): string {
         i.duration ? ` (${i.duration} ${t.mins})` : ""
       }`
   );
-  const extra = totals.homeFee || totals.tax
+  const extra = totals.homeFee || totals.tax || totals.discount
     ? [
         `${t.subtotal}: ${money(totals.subtotal)}`,
         totals.homeFee ? `${t.homeFee}: ${money(totals.homeFee)}` : null,
+        totals.discount ? `${t.discount}: -${money(totals.discount)}` : null,
         totals.tax ? `${t.tax} (${totals.taxPercent}%): ${money(totals.tax)}` : null,
       ]
     : [];
@@ -156,7 +164,7 @@ export function buildUpdateMessage(b: any, langIn?: string | null): string {
   const deposit = b.country && b.country !== LEBANON ? totals.deposit : 0;
 
   return [
-    t.updated,
+    b.status === "cancelled" ? t.cancelledMsg : t.updated,
     "",
     `*${t.details}*`,
     b.reference ? `${t.reference}: ${b.reference}` : null,
@@ -180,8 +188,8 @@ export function buildUpdateMessage(b: any, langIn?: string | null): string {
     b.paid ? `${t.paid}: ${t.paidYes}` : null,
     b.notes ? `${t.notes}: ${b.notes}` : null,
     "",
-    t.welcome,
-    "",
+    b.status === "cancelled" ? null : t.welcome,
+    b.status === "cancelled" ? null : "",
     t.thanks,
   ]
     .filter((l) => l !== null)
