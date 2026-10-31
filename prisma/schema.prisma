@@ -75,8 +75,10 @@ model Order {
   homeFee     String?
   taxPercent  String?
   tax         String?
-  // Discount ($) given from the dashboard on an existing appointment
-  discount    String?
+  // Discount given from the dashboard on an existing appointment:
+  // discountPercent is what the team sets, discount the $ amount it takes off
+  discount        String?
+  discountPercent String?
   // Booking reference (RD-XXXXXX), the client's notes and, when the client
   // was signed in, their account (User id)
   reference   String?
@@ -93,6 +95,9 @@ model Order {
   // (the calendar column on the dashboard); language of the client's emails
   staff       String?
   lang        String?
+  // Where the client lives (any country), asked on the website next to
+  // the appointment country
+  clientCountry String?
 }
 
 // The website's own record of an appointment (my-app/app/api/booking). The

@@ -33,11 +33,12 @@ export type Draft = {
   paid: boolean;
   notes: string;
   taxPercent: number | string;
-  discount?: number | string;
+  discountPercent?: number | string;
   cart: { id?: string; title: string; cat?: string; price: number | string; qty: number | string; duration?: number | string | null }[];
   cancelledBy?: string | null;
   cancelledAt?: string | null;
   lang?: string | null;
+  clientCountry?: string | null;
 };
 
 const money = (n: any) => `$${(Number(n) || 0).toFixed(2)}`;
@@ -60,6 +61,7 @@ type Props = {
   isNew: boolean;
   services: Service[];
   orders?: any[];
+  countries?: string[];
   globalTax: number;
   saving: boolean;
   error: string;
@@ -79,6 +81,7 @@ export default function AppointmentDrawer({
   isNew,
   services,
   orders = [],
+  countries = COUNTRIES,
   globalTax,
   saving,
   error,
@@ -189,7 +192,7 @@ export default function AppointmentDrawer({
     city: d.city,
     serviceType: d.serviceType,
     taxPercent: Number(d.taxPercent) || 0,
-    discount: isNew ? 0 : Number(d.discount) || 0,
+    discountPercent: isNew ? 0 : Number(d.discountPercent) || 0,
   });
   const minutes = cart.reduce((a, c) => a + (Number(c.duration) || 0) * c.qty, 0);
   const st = statusOf(d.status);
@@ -305,6 +308,7 @@ export default function AppointmentDrawer({
               <div>
                 <b>{d.name || "New client"}</b>
                 <small>{[d.phone, d.email].filter(Boolean).join(" · ") || "Add the client's details"}</small>
+                {d.clientCountry && <small>Lives in {d.clientCountry}</small>}
               </div>
             </div>
             <div className="fz-field">
@@ -368,7 +372,7 @@ export default function AppointmentDrawer({
                 <label htmlFor="fz-country">Country *</label>
                 <select id="fz-country" value={d.country} onChange={(e) => setPlace({ country: e.target.value })}>
                   <option value="">Choose…</option>
-                  {Array.from(new Set([...COUNTRIES, d.country].filter(Boolean))).map((c) => (
+                  {Array.from(new Set([...countries, d.country].filter(Boolean))).map((c) => (
                     <option key={c} value={c}>
                       {c}
                     </option>
@@ -539,15 +543,16 @@ export default function AppointmentDrawer({
             )}
             {!isNew && (
               <div className="fz-field">
-                <label htmlFor="fz-discount">Discount ($)</label>
+                <label htmlFor="fz-discount">Discount (%)</label>
                 <input
                   id="fz-discount"
                   type="number"
                   min={0}
-                  step="0.01"
-                  placeholder="0.00"
-                  value={d.discount ?? ""}
-                  onChange={(e) => set({ discount: e.target.value })}
+                  max={100}
+                  step="0.5"
+                  placeholder="0"
+                  value={d.discountPercent ?? ""}
+                  onChange={(e) => set({ discountPercent: e.target.value })}
                 />
               </div>
             )}
@@ -564,7 +569,7 @@ export default function AppointmentDrawer({
               )}
               {totals.discount > 0 && (
                 <div style={{ color: "#16a34a" }}>
-                  <span>Discount</span>
+                  <span>Discount ({totals.discountPercent}%)</span>
                   <span>-{money(totals.discount)}</span>
                 </div>
               )}

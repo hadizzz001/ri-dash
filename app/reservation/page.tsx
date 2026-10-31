@@ -23,6 +23,7 @@ import {
   UNASSIGNED,
   cartMinutes,
   defaultTaxPercent,
+  discountPercentOf,
 } from "../utils/appointments";
 
 /* ------------------------------------------------------------- helpers */
@@ -163,6 +164,7 @@ export default function AppointmentsCalendar() {
   const [loading, setLoading] = useState(true);
   const [services, setServices] = useState<Service[]>([]);
   const [globalTax, setGlobalTax] = useState(0);
+  const [countries, setCountries] = useState<string[] | undefined>(undefined);
 
   const [view, setView] = useState<"day" | "week" | "list">("day");
   const [date, setDate] = useState(() => toIso(new Date()));
@@ -170,6 +172,7 @@ export default function AppointmentsCalendar() {
   const [statusFilter, setStatusFilter] = useState("active");
   const [search, setSearch] = useState("");
   const [pop, setPop] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const [listRange, setListRange] = useState<"upcoming" | "past" | "day" | "all">("upcoming");
   const [sortAsc, setSortAsc] = useState(true);
@@ -213,6 +216,10 @@ export default function AppointmentsCalendar() {
       .then((r) => r.json())
       .then((j) => setGlobalTax(Number(j?.percent) || 0))
       .catch(() => setGlobalTax(0));
+    fetch("/api/booking-settings")
+      .then((r) => r.json())
+      .then((j) => Array.isArray(j?.countries) && setCountries(j.countries.map((c: any) => c.name)))
+      .catch(() => {});
 
     // New website bookings show up on their own; the red line moves
     const poll = window.setInterval(load, 60_000);
@@ -331,11 +338,12 @@ export default function AppointmentsCalendar() {
         paid: !!o.paid,
         notes: o.notes || "",
         taxPercent: o.taxPercent != null ? Number(o.taxPercent) || 0 : 0,
-        discount: o.discount != null && Number(o.discount) ? Number(o.discount) : "",
+        discountPercent: discountPercentOf(o) || "",
         cart: Array.isArray(o.cart) ? o.cart.map((c: any) => ({ ...c })) : [],
         cancelledAt: o.cancelledAt || null,
         cancelledBy: o.cancelledBy || null,
         lang: o.lang || null,
+        clientCountry: o.clientCountry || null,
       },
     });
   };
@@ -387,7 +395,7 @@ export default function AppointmentsCalendar() {
         paid: d.paid,
         notes: d.notes,
         taxPercent: Number(d.taxPercent) || 0,
-        ...(isNew ? {} : { discount: Number(d.discount) || 0 }),
+        ...(isNew ? {} : { discountPercent: Math.min(100, Math.max(0, Number(d.discountPercent) || 0)) }),
         cart,
       });
       upsert(saved);
@@ -481,7 +489,7 @@ export default function AppointmentsCalendar() {
 
   /* --------------------------------------------------------- nav */
 
-  const step = view === "week" ? 7 : 1;
+  const activeFilters = (staffFilter !== "all" ? 1 : 0) + (statusFilter !== "active" ? 1 : 0);
   const label =
     view === "week"
       ? (() => {
@@ -527,22 +535,21 @@ export default function AppointmentsCalendar() {
     <div className="fz">
       {/* ---------------------------------------------------- toolbar */}
       <div className="fz-toolbar">
-        <button type="button" className="fz-btn" onClick={() => setDate(toIso(new Date()))}>
-          Today
+        <button
+          type="button"
+          className="fz-btn fz-datebtn"
+          onClick={() => setPop((p) => !p)}
+          aria-expanded={pop}
+          title="Choose the day to see"
+          style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+        >
+          <Icon d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+          {label}
         </button>
-        <div className="fz-group">
-          <button type="button" className="fz-btn fz-btn--icon" aria-label="Previous" onClick={() => setDate(addDays(date, -step))}>
-            <Icon d="M15 18l-6-6 6-6" />
-          </button>
-          <button type="button" className="fz-btn fz-datebtn" onClick={() => setPop((p) => !p)} aria-expanded={pop}>
-            {label}
-          </button>
-          <button type="button" className="fz-btn fz-btn--icon" aria-label="Next" onClick={() => setDate(addDays(date, step))}>
-            <Icon d="M9 18l6-6-6-6" />
-          </button>
-        </div>
         {pop && (
-          <div className="fz-pop" style={{ left: 96 }} onMouseLeave={() => setPop(false)}>
+          <>
+            <div style={{ position: "fixed", inset: 0, zIndex: 49 }} onClick={() => setPop(false)} />
+          <div className="fz-pop" style={{ left: 16, zIndex: 50 }}>
             <MiniCalendar
               value={date}
               marked={markedDays}
@@ -553,6 +560,7 @@ export default function AppointmentsCalendar() {
             />
             <div className="fz-pop-quick">
               {[
+                ["Today", 0],
                 ["In 1 week", 7],
                 ["In 2 weeks", 14],
                 ["In 4 weeks", 28],
@@ -571,56 +579,133 @@ export default function AppointmentsCalendar() {
               ))}
             </div>
           </div>
+          </>
         )}
 
-        <select className="fz-select" value={staffFilter} onChange={(e) => setStaffFilter(e.target.value)} aria-label="Team member">
-          <option value="all">All team members</option>
-          {STAFF.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-          <option value={UNASSIGNED.id}>{UNASSIGNED.name}</option>
-        </select>
-
-        <select className="fz-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="Status">
-          <option value="active">All except cancelled</option>
-          <option value="all">All statuses</option>
-          <option value="unpaid">Unpaid</option>
-          {STATUSES.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-
         <div className="fz-spacer" />
-
-        <label className="fz-search">
-          <Icon d="M21 21l-4.3-4.3M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14z" />
-          <input
-            className="fz-input"
-            placeholder="Search client, phone, ref…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </label>
-
-        <div className="fz-seg" role="tablist" aria-label="View">
-          {(["day", "week", "list"] as const).map((v) => (
-            <button type="button" key={v} role="tab" aria-selected={view === v} className={view === v ? "is-on" : ""} onClick={() => setView(v)}>
-              {v[0].toUpperCase() + v.slice(1)}
-            </button>
-          ))}
-        </div>
 
         <button type="button" className="fz-btn fz-btn--icon" aria-label="Refresh" title="Refresh" onClick={load}>
           <Icon d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5" />
         </button>
 
-        <button type="button" className="fz-btn fz-btn--dark" onClick={() => openNew()}>
-          Add <Icon d="M12 5v14M5 12h14" />
-        </button>
+        <div style={{ position: "relative" }}>
+          <button
+            type="button"
+            className="fz-btn fz-btn--icon"
+            aria-label="Filters & options"
+            title="Filters & options"
+            aria-expanded={moreOpen}
+            onClick={() => setMoreOpen((o) => !o)}
+            style={{ position: "relative" }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <circle cx="12" cy="5" r="2" />
+              <circle cx="12" cy="12" r="2" />
+              <circle cx="12" cy="19" r="2" />
+            </svg>
+            {activeFilters > 0 && (
+              <span
+                style={{ position: "absolute", top: -4, right: -4, background: "#6950f3", color: "#fff", borderRadius: 999, fontSize: 10, minWidth: 16, height: 16, lineHeight: "16px", textAlign: "center", padding: "0 4px" }}
+              >
+                {activeFilters}
+              </span>
+            )}
+          </button>
+          {moreOpen && (
+            <>
+              <div style={{ position: "fixed", inset: 0, zIndex: 49 }} onClick={() => setMoreOpen(false)} />
+              <div
+                className="fz-pop"
+                style={{ right: 0, left: "auto", top: "calc(100% + 6px)", zIndex: 50, width: 260, display: "grid", gap: 10 }}
+              >
+                <label className="fz-search" style={{ width: "100%" }}>
+                  <Icon d="M21 21l-4.3-4.3M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14z" />
+                  <input
+                    className="fz-input"
+                    placeholder="Search client, phone, ref…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </label>
+
+                <div className="fz-seg" role="tablist" aria-label="View" style={{ width: "100%" }}>
+                  {(["day", "week", "list"] as const).map((v) => (
+                    <button
+                      type="button"
+                      key={v}
+                      role="tab"
+                      aria-selected={view === v}
+                      className={view === v ? "is-on" : ""}
+                      style={{ flex: 1 }}
+                      onClick={() => {
+                        setView(v);
+                        setMoreOpen(false);
+                      }}
+                    >
+                      {v[0].toUpperCase() + v.slice(1)}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  className="fz-btn fz-btn--dark"
+                  style={{ justifyContent: "center" }}
+                  onClick={() => {
+                    setMoreOpen(false);
+                    openNew();
+                  }}
+                >
+                  Add <Icon d="M12 5v14M5 12h14" />
+                </button>
+
+                <hr style={{ border: 0, borderTop: "1px solid #eee", margin: 0 }} />
+                <b style={{ fontSize: 13 }}>Filters</b>
+                <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#6b7280" }}>
+                  Team member
+                  <select className="fz-select" value={staffFilter} onChange={(e) => setStaffFilter(e.target.value)}>
+                    <option value="all">All team members</option>
+                    {STAFF.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                    <option value={UNASSIGNED.id}>{UNASSIGNED.name}</option>
+                  </select>
+                </label>
+                <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#6b7280" }}>
+                  Status
+                  <select className="fz-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                    <option value="active">All except cancelled</option>
+                    <option value="all">All statuses</option>
+                    <option value="unpaid">Unpaid</option>
+                    {STATUSES.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {activeFilters > 0 && (
+                  <button
+                    type="button"
+                    className="fz-btn fz-btn--sm"
+                    onClick={() => {
+                      setStaffFilter("all");
+                      setStatusFilter("active");
+                    }}
+                  >
+                    Reset filters
+                  </button>
+                )}
+                <hr style={{ border: 0, borderTop: "1px solid #eee", margin: 0 }} />
+                <a href="/app1" className="fz-btn fz-btn--sm" style={{ textAlign: "center", textDecoration: "none" }}>
+                  Manage days, hours & countries
+                </a>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* -------------------------------------------------------- body */}
@@ -901,6 +986,7 @@ export default function AppointmentsCalendar() {
           isNew={drawer.isNew}
           services={services}
           orders={orders}
+          countries={countries}
           globalTax={globalTax}
           saving={saving}
           error={drawerError}

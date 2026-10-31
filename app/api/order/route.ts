@@ -1,6 +1,7 @@
 import prisma from "../../../prisma";
 import { NextResponse } from "next/server";
 import { buildUpdate, findClash } from "./appointmentData";
+import { scheduleHourReminders } from "./hourReminder";
 import { makeReference, newObjectId } from "../../utils/appointments";
 
 export async function main() {
@@ -96,6 +97,7 @@ export const POST = async (req: Request) => {
             },
         });
 
+        await scheduleHourReminders();
         return NextResponse.json(created, { status: 201 });
     } catch (err) {
         console.error("Error creating appointment:", err);

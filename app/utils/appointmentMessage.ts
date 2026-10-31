@@ -3,7 +3,7 @@
  * Same layout as the website's booking message (my-app/app/lib/bookingMessage.js)
  * so the client sees every detail of the booking, in their language.
  */
-import { LEBANON, computeTotals } from "./appointments";
+import { LEBANON, computeTotals, discountPercentOf } from "./appointments";
 
 type Lang = "en" | "ar" | "fr";
 
@@ -142,7 +142,7 @@ export function buildUpdateMessage(b: any, langIn?: string | null): string {
     city: b.city,
     serviceType: b.serviceType,
     taxPercent: Number(b.taxPercent) || 0,
-    discount: Number(b.discount) || 0,
+    discountPercent: discountPercentOf(b),
   });
   const minutes = cart.reduce((a: number, c: any) => a + (c.duration || 0) * c.qty, 0);
 
@@ -156,7 +156,7 @@ export function buildUpdateMessage(b: any, langIn?: string | null): string {
     ? [
         `${t.subtotal}: ${money(totals.subtotal)}`,
         totals.homeFee ? `${t.homeFee}: ${money(totals.homeFee)}` : null,
-        totals.discount ? `${t.discount}: -${money(totals.discount)}` : null,
+        totals.discount ? `${t.discount} (${totals.discountPercent}%): -${money(totals.discount)}` : null,
         totals.tax ? `${t.tax} (${totals.taxPercent}%): ${money(totals.tax)}` : null,
       ]
     : [];

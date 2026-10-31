@@ -89,18 +89,31 @@ export function computeTotals(
     city,
     serviceType,
     taxPercent,
-    discount = 0,
-  }: { country: string; city: string; serviceType: string; taxPercent: number; discount?: number }
+    discountPercent = 0,
+  }: { country: string; city: string; serviceType: string; taxPercent: number; discountPercent?: number }
 ) {
   const subtotal = round2(cart.reduce((a, i) => a + Number(i.price) * (Number(i.qty) || 1), 0));
   const homeFee = serviceType === "home" && country === LEBANON ? subtotal : 0;
-  // Discount (fixed $ amount) is taken off before tax, never below zero
-  const disc = round2(Math.min(Math.max(0, Number(discount) || 0), subtotal + homeFee));
-  const rate = defaultTaxPercent(country, city, taxPercent);
+  // Discount (a percentage, 0–100) is taken off before tax
+  const pct = Math.min(100, Math.max(0, Number(discountPercent) || 0));
+  const disc = round2(((subtotal + homeFee) * pct) / 100);
+  // Tax applies to home service only — salon bookings are tax free.
+  const rate = serviceType === "home" ? defaultTaxPercent(country, city, taxPercent) : 0;
   const tax = round2(((subtotal + homeFee - disc) * rate) / 100);
   const total = round2(subtotal + homeFee - disc + tax);
   const deposit = country && country !== LEBANON ? round2(total * DEPOSIT_RATE) : 0;
-  return { subtotal, homeFee, discount: disc, taxPercent: rate, tax, total, deposit };
+  return { subtotal, homeFee, discountPercent: pct, discount: disc, taxPercent: rate, tax, total, deposit };
+}
+
+/**
+ * The discount percentage of an order. Older orders only kept a $ amount, so
+ * that is turned into the matching percentage of subtotal + home fee.
+ */
+export function discountPercentOf(o: any): number {
+  if (o?.discountPercent != null && o.discountPercent !== "") return Math.min(100, Math.max(0, Number(o.discountPercent) || 0));
+  const amount = Number(o?.discount) || 0;
+  const base = (Number(o?.subtotal) || 0) + (Number(o?.homeFee) || 0);
+  return amount > 0 && base > 0 ? Math.min(100, round2((amount / base) * 100)) : 0;
 }
 
 /** Total minutes of a cart (60 when the services have no duration). */

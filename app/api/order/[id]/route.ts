@@ -1,5 +1,6 @@
 import prisma from "../../../../prisma";
 import { buildUpdate, findClash, syncBooking } from "../appointmentData";
+import { resetHourReminder, scheduleHourReminders } from "../hourReminder";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,13 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       console.error("Booking sync failed:", e?.message || e)
     );
 
+    // Anything but a payment change: the scheduled "in 1 hour" emails are
+    // replaced with ones carrying the new details (none once cancelled)
+    if (Object.keys(order).some((k) => k !== "paid")) {
+      await resetHourReminder(current.bookingId);
+      await scheduleHourReminders();
+    }
+
     return json(updated);
   } catch (error) {
     console.error("Error updating appointment:", error);
@@ -73,6 +81,9 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   try {
     const order = await prisma.order.findUnique({ where: { id } });
     if (!order) return json({ error: "Order not found" }, 404);
+
+    // Its scheduled "in 1 hour" emails must not go out
+    await resetHourReminder(order.bookingId);
 
     // The website reads taken times from the Booking behind this order, so
     // delete both together: that frees the appointment's date and hour.

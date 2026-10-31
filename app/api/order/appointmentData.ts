@@ -5,6 +5,7 @@ import {
   STATUSES,
   cleanCart,
   computeTotals,
+  discountPercentOf,
   isDate,
   isHour,
 } from "../../utils/appointments";
@@ -56,7 +57,7 @@ export function buildUpdate(body: any, current: any = {}) {
     errors.push("Invalid email");
 
   // Re-price when anything that changes the amount was sent
-  const reprice = ["cart", "country", "city", "serviceType", "taxPercent", "discount"].some((k) => k in body);
+  const reprice = ["cart", "country", "city", "serviceType", "taxPercent", "discountPercent"].some((k) => k in body);
   let totals: ReturnType<typeof computeTotals> | null = null;
   if (reprice) {
     const cart = "cart" in body ? cleanCart(body.cart) : cleanCart(current.cart);
@@ -67,8 +68,10 @@ export function buildUpdate(body: any, current: any = {}) {
       city: pick("city"),
       serviceType: pick("serviceType"),
       taxPercent: "taxPercent" in body ? Number(body.taxPercent) : Number(current.taxPercent) || 0,
-      discount: "discount" in body ? Number(body.discount) || 0 : Number(current.discount) || 0,
+      discountPercent:
+        "discountPercent" in body ? Number(body.discountPercent) || 0 : discountPercentOf(current),
     });
+    order.discountPercent = String(totals.discountPercent);
     order.discount = String(totals.discount);
     order.cart = cart;
     order.subtotal = String(totals.subtotal);
@@ -81,7 +84,7 @@ export function buildUpdate(body: any, current: any = {}) {
   // The website's Booking keeps numbers and a Date for cancelledAt
   const booking: Record<string, any> = {};
   Object.entries(order).forEach(([k, v]) => {
-    if (["subtotal", "homeFee", "discount", "taxPercent", "tax", "total"].includes(k)) booking[k] = Number(v);
+    if (["subtotal", "homeFee", "discount", "discountPercent", "taxPercent", "tax", "total"].includes(k)) booking[k] = Number(v);
     else if (k === "cancelledAt") booking[k] = v ? { $date: (v as Date).toISOString() } : null;
     else booking[k] = v;
   });
