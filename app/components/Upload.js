@@ -47,15 +47,17 @@ const Upload = ({ onImagesUpload }) => {
   };
 
   return (
-    <div className="mb-4">
-      <label className="block mb-1 font-bold">Upload Images</label>
-      <input type="file" multiple onChange={handleImagesChange} className="border p-2 w-full" />
-      {loading && <p>Uploading...</p>}
-      <div className="mt-2 flex flex-wrap gap-2">
-        {images.map((imgUrl, index) => (
-          <img key={index} src={imgUrl} alt={`Uploaded ${index}`} className="w-24 h-auto object-cover" />
-        ))}
-      </div>
+    <div className="rd-field">
+      <span className="rd-label">Upload images</span>
+      <input type="file" multiple onChange={handleImagesChange} className="rd-input" />
+      {loading && <p className="rd-hint">Uploading…</p>}
+      {images.length > 0 && (
+        <div className="rd-thumbs">
+          {images.map((imgUrl, index) => (
+            <img key={index} src={imgUrl} alt={`Uploaded ${index + 1}`} className="rd-thumb" />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

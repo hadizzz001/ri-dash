@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { redirect, useRouter } from 'next/navigation';
+import { Pencil, Plus, Save, Trash2 } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
+import Notice from '../components/Notice';
 
 const ManageCategory = () => {
   const [formData, setFormData] = useState({ code: '', per: 0 });
@@ -102,95 +105,106 @@ const ManageCategory = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">{editMode ? 'Edit Code' : 'Add Code'}</h1>
-      <form onSubmit={editMode ? handleEditSubmit : handleSubmit} className="space-y-4">
-        <div>
-          <label className="block mb-1">Code</label>
-          <input
-            type="text"
-            className="border p-2 w-full"
-            value={editMode ? editFormData.code : formData.code}
-            onChange={(e) =>
-              editMode
-                ? setEditFormData({ ...editFormData, code: e.target.value })
-                : setFormData({ ...formData, code: e.target.value })
-            }
-            required
-          />
+    <div className="rd-page rd-page--narrow">
+      <PageHeader title={editMode ? 'Edit Code' : 'Add Code'} subtitle="Discount codes clients can use at the shop checkout." />
+      <form
+        onSubmit={editMode ? handleEditSubmit : handleSubmit}
+        className={`rd-card rd-form ${editMode ? 'rd-card--editing' : ''}`}
+      >
+        <div className="rd-grid">
+          <label className="rd-field">
+            <span className="rd-label">Code</span>
+            <input
+              type="text"
+              className="rd-input rd-mono"
+              value={editMode ? editFormData.code : formData.code}
+              onChange={(e) =>
+                editMode
+                  ? setEditFormData({ ...editFormData, code: e.target.value })
+                  : setFormData({ ...formData, code: e.target.value })
+              }
+              required
+            />
+          </label>
+          <label className="rd-field">
+            <span className="rd-label">Percentage</span>
+            <input
+              type="number"
+              className="rd-input"
+              value={editMode ? editFormData.per : formData.per}
+              onChange={(e) =>
+                editMode
+                  ? setEditFormData({ ...editFormData, per: parseInt(e.target.value) })
+                  : setFormData({ ...formData, per: parseInt(e.target.value) })
+              }
+              required
+            />
+          </label>
         </div>
-        <div>
-          <label className="block mb-1">Percentage</label>
-          <input
-            type="number"
-            className="border p-2 w-full"
-            value={editMode ? editFormData.per : formData.per}
-            onChange={(e) =>
-              editMode
-                ? setEditFormData({ ...editFormData, per: parseInt(e.target.value) })
-                : setFormData({ ...formData, per: parseInt(e.target.value) })
-            }
-            required
-          />
-        </div>
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2">
-          {editMode ? 'Update Code' : 'Add Code'}
-        </button>
-        {editMode && (
-          <button
-            type="button"
-            onClick={() => {
-              setEditMode(false);
-              setEditFormData({ id: '', code: '', per: 0 });
-            }}
-            className="bg-gray-500 text-white px-4 py-2 ml-2"
-          >
-            Cancel
+        <div className="rd-actions">
+          <button type="submit" className="rd-btn rd-btn--primary">
+            {editMode ? <Save size={16} /> : <Plus size={16} />}
+            {editMode ? 'Update code' : 'Add code'}
           </button>
-        )}
+          {editMode && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditMode(false);
+                setEditFormData({ id: '', code: '', per: 0 });
+              }}
+              className="rd-btn rd-btn--ghost"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
-      {message && <p className="mt-4">{message}</p>}
 
-      <h2 className="text-xl font-bold mt-8">All Codes</h2>
-      <table className="table-auto border-collapse border border-gray-300 w-full mt-4">
-        <thead>
-          <tr>
-            <th className="border border-gray-300 p-2">Code</th>
-            <th className="border border-gray-300 p-2">Percentage</th>
-            <th className="border border-gray-300 p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {categories.length > 0 ? (
-            categories.map((category) => (
-              <tr key={category.id}>
-                <td className="border border-gray-300 p-2">{category.code}</td>
-                <td className="border border-gray-300 p-2">{category.per}%</td>
-                <td className="border border-gray-300 p-2 text-center">
-                  <button
-                    onClick={() => handleEdit(category)}
-                    className="bg-yellow-500 text-white px-4 py-1 rounded mr-2"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(category.id)}
-                    className="bg-red-500 text-white px-4 py-1 rounded"
-                  >
-                    Delete
-                  </button>
+      <Notice text={message} />
+
+      <div className="rd-section">
+        <span>All codes · {categories.length}</span>
+      </div>
+      <div className="rd-table-wrap">
+        <table className="rd-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Percentage</th>
+              <th className="is-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {categories.length > 0 ? (
+              categories.map((category) => (
+                <tr key={category.id}>
+                  <td className="rd-mono rd-cell-title">{category.code}</td>
+                  <td>
+                    <span className="rd-badge rd-badge--accent">{category.per}%</span>
+                  </td>
+                  <td className="is-actions">
+                    <div className="rd-row-actions">
+                      <button onClick={() => handleEdit(category)} className="rd-btn rd-btn--ghost rd-btn--sm">
+                        <Pencil size={14} /> Edit
+                      </button>
+                      <button onClick={() => handleDelete(category.id)} className="rd-btn rd-btn--danger rd-btn--sm">
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={3} className="rd-empty">
+                  No codes yet.
                 </td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={3} className="border border-gray-300 p-2 text-center">
-                No Code found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

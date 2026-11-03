@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Search, Trash2 } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
 
 export default function UsersPage() {
   const [rows, setRows] = useState<any[]>([]);
@@ -24,42 +26,53 @@ export default function UsersPage() {
   });
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-2">Customers</h1>
-      <p className="mb-4 text-gray-600">{rows.length} registered accounts</p>
-      <input className="border p-2 w-full mb-4" placeholder="Search name, email or phone…" value={q} onChange={(e) => setQ(e.target.value)} />
+    <div className="rd-page">
+      <PageHeader title="Customers" subtitle={`${rows.length} registered account${rows.length === 1 ? '' : 's'} on the website.`} />
 
-      <table className="table-auto border-collapse border border-gray-300 w-full">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border border-gray-300 p-2">Name</th>
-            <th className="border border-gray-300 p-2">Email</th>
-            <th className="border border-gray-300 p-2">Phone</th>
-            <th className="border border-gray-300 p-2">Wishlist</th>
-            <th className="border border-gray-300 p-2">Reviews</th>
-            <th className="border border-gray-300 p-2">Joined</th>
-            <th className="border border-gray-300 p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filtered.map((u) => (
-            <tr key={u.id}>
-              <td className="border border-gray-300 p-2">{u.name}</td>
-              <td className="border border-gray-300 p-2">{u.email}</td>
-              <td className="border border-gray-300 p-2">{u.phone || '—'}</td>
-              <td className="border border-gray-300 p-2 text-center">{u._count?.favorites ?? 0}</td>
-              <td className="border border-gray-300 p-2 text-center">{u._count?.reviews ?? 0}</td>
-              <td className="border border-gray-300 p-2 whitespace-nowrap">{new Date(u.createdAt).toLocaleDateString()}</td>
-              <td className="border border-gray-300 p-2 text-center">
-                <button onClick={() => remove(u.id)} className="bg-red-500 text-white px-2 py-1">Delete</button>
-              </td>
+      <div className="rd-search" style={{ marginBottom: 16 }}>
+        <Search size={16} />
+        <input className="rd-input" placeholder="Search name, email or phone…" value={q} onChange={(e) => setQ(e.target.value)} />
+      </div>
+
+      <div className="rd-table-wrap">
+        <table className="rd-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th className="is-center">Wishlist</th>
+              <th className="is-center">Reviews</th>
+              <th>Joined</th>
+              <th className="is-actions">Actions</th>
             </tr>
-          ))}
-          {filtered.length === 0 && (
-            <tr><td colSpan={7} className="border border-gray-300 p-4 text-center text-gray-500">No customers yet.</td></tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filtered.map((u) => (
+              <tr key={u.id}>
+                <td className="rd-cell-title">{u.name}</td>
+                <td>{u.email}</td>
+                <td className="is-nowrap">{u.phone || '—'}</td>
+                <td className="is-center">{u._count?.favorites ?? 0}</td>
+                <td className="is-center">{u._count?.reviews ?? 0}</td>
+                <td className="is-nowrap is-muted">{new Date(u.createdAt).toLocaleDateString()}</td>
+                <td className="is-actions">
+                  <button onClick={() => remove(u.id)} className="rd-btn rd-btn--danger rd-btn--sm">
+                    <Trash2 size={14} /> Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={7} className="rd-empty">
+                  {rows.length ? 'No customer matches this search.' : 'No customers yet.'}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

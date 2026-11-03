@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Save } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
+import Notice from '../components/Notice';
 
 const ManageTax = () => {
   const [percent, setPercent] = useState('');
@@ -34,34 +37,35 @@ const ManageTax = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-2">Appointment Tax</h1>
-      <p className="text-gray-600 mb-4">
-        Added to the total of every appointment outside Beirut — the rest of Lebanon, KSA and
-        Kuwait — for both salon and home service. Appointments in Beirut are tax free (0%).
-        Set 0 for no tax anywhere.
-      </p>
+    <div className="rd-page rd-page--narrow">
+      <PageHeader title="Appointment Tax" subtitle="One percentage, added to appointment totals outside Beirut." />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block mb-1">Tax (%)</label>
+      <form onSubmit={handleSubmit} className="rd-card rd-form">
+        <p className="rd-hint">
+          Added to the total of every appointment outside Beirut — the rest of Lebanon, KSA and Kuwait — for both
+          salon and home service. Appointments in Beirut are tax free (0%). Set 0 for no tax anywhere.
+        </p>
+        <label className="rd-field" style={{ maxWidth: 240 }}>
+          <span className="rd-label">Tax (%)</span>
           <input
             type="number"
             min="0"
             max="100"
             step="0.01"
-            className="border p-2 w-full"
+            className="rd-input"
             value={percent}
             onChange={(e) => setPercent(e.target.value)}
             required
           />
+        </label>
+        <div className="rd-actions">
+          <button type="submit" className="rd-btn rd-btn--primary">
+            <Save size={16} /> Save tax
+          </button>
         </div>
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2">
-          Save Tax
-        </button>
       </form>
 
-      {message && <p className="mt-4">{message}</p>}
+      <Notice text={message} />
     </div>
   );
 };

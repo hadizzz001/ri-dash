@@ -40,10 +40,10 @@ const ExportToExcel = ({ allTemp }) => {
   };
 
   return (
-    <button
-      onClick={handleExport}
-      className="bg-green-500 text-white px-4 py-2 rounded"
-    >
+    <button type="button" onClick={handleExport} className="rd-btn rd-btn--ghost">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
+      </svg>
       Export to Excel
     </button>
   );

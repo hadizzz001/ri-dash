@@ -1,0 +1,135 @@
+/* Booking Schedule page (/app1). Prefix: sch-
+   Built on the shared blocks in globals.css (rd-card, rd-input, rd-btn…). */
+
+/* ---------------------------------------------------------- country card */
+.sch-country__title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.sch-pin {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #f4f4f5;
+  color: #52525b;
+}
+.sch-country.is-locked .sch-pin { background: #fef2f2; color: #b42318; }
+.sch-country__ar { font-weight: 400; color: var(--rd-muted); }
+
+.sch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-bottom: 10px;
+}
+.sch-row .rd-label { font-weight: 600; }
+
+/* calendar + chosen dates side by side, stacked on phones */
+.sch-dates {
+  display: grid;
+  grid-template-columns: 296px minmax(0, 1fr);
+  gap: 24px;
+  margin-top: 14px;
+}
+@media (max-width: 860px) {
+  .sch-dates { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ------------------------------------------------------------- calendar */
+.sch-cal {
+  align-self: start;
+  padding: 12px;
+  border: 1px solid var(--rd-border);
+  border-radius: 12px;
+  user-select: none;
+}
+.sch-cal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.sch-cal__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.sch-cal__dow { padding: 4px 0; font-size: 11px; font-weight: 600; text-align: center; color: #a1a1aa; }
+.sch-cal__day {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 13px;
+  color: var(--rd-text);
+  cursor: pointer;
+  transition: background-color 0.12s, color 0.12s;
+}
+.sch-cal__day:hover:not(:disabled) { background: #f4f4f5; }
+.sch-cal__day.is-today { box-shadow: inset 0 0 0 1px #d4d4d8; font-weight: 600; }
+.sch-cal__day.is-on { background: var(--rd-accent); color: #fff; font-weight: 600; }
+.sch-cal__day.is-on:hover:not(:disabled) { background: #965a4f; }
+.sch-cal__day:disabled { color: #d4d4d8; cursor: default; }
+.sch-cal__day:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(171, 105, 93, 0.45); }
+/* a dot under days that already have appointments in this country */
+.sch-cal__day.has-dot::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.6;
+}
+.sch-cal__legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 12px; color: var(--rd-muted); }
+.sch-cal__legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 5px;
+  border-radius: 3px;
+  vertical-align: -1px;
+  background: var(--rd-accent);
+}
+.sch-cal__legend i.is-dot { width: 4px; height: 4px; margin: 0 8px 2px 3px; border-radius: 50%; background: var(--rd-text); }
+
+/* ------------------------------------------------------- hours & dates */
+.sch-hours { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.sch-hours .rd-input { width: auto; min-width: 96px; }
+.sch-bad { font-size: 12.5px; color: #dc2626; }
+
+.sch-new {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fafafa;
+}
+.sch-new .rd-label { font-weight: 600; }
+.sch-datelist { max-height: 330px; margin: 0 0 8px; padding: 0; overflow-y: auto; list-style: none; }
+.sch-datelist li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 9px 0;
+  border-top: 1px solid var(--rd-border);
+}
+.sch-datelist li:first-child { border-top: 0; }
+.sch-datelist__date { min-width: 150px; font-weight: 500; }
+.sch-datelist li > .rd-btn { margin-left: auto; }
+
+.sch-cities { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.6; }
+
+/* ------------------------------------------------------- weekly / dates */
+.sch-day { width: 150px; font-weight: 500; }
+.sch-add-date { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sch-add-date .rd-input { width: auto; }

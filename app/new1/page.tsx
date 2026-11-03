@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Pencil, Save } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
+import Notice from '../components/Notice';
 
 const ManageNew1 = () => {
   const [editTitle, setEditTitle] = useState('');
@@ -54,48 +57,52 @@ const ManageNew1 = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-4">Manage New1</h1>
+    <div className="rd-page rd-page--narrow">
+      <PageHeader title="News Title" subtitle="The short news lines shown on the website." />
 
       {/* Edit Form */}
       {editId && (
-        <form onSubmit={handleUpdate} className="flex gap-2 mb-6 bg-yellow-50 p-3 rounded border border-yellow-300">
-          <input
-            type="text"
-            className="border p-2 flex-1"
-            value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            required
-          />
-          <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
-            Update
-          </button>
-          <button
-            type="button"
-            onClick={() => { setEditId(''); setEditTitle(''); }}
-            className="bg-gray-400 text-white px-4 py-2 rounded"
-          >
-            Cancel
-          </button>
+        <form onSubmit={handleUpdate} className="rd-card rd-card--editing rd-form">
+          <label className="rd-field">
+            <span className="rd-label">Text</span>
+            <input
+              type="text"
+              className="rd-input"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              required
+            />
+          </label>
+          <div className="rd-actions">
+            <button type="submit" className="rd-btn rd-btn--primary">
+              <Save size={16} /> Update
+            </button>
+            <button
+              type="button"
+              onClick={() => { setEditId(''); setEditTitle(''); }}
+              className="rd-btn rd-btn--ghost"
+            >
+              Cancel
+            </button>
+          </div>
         </form>
       )}
 
-      {message && <p className="mb-4 text-green-600">{message}</p>}
+      <Notice text={message} />
 
       {/* Items List */}
-      <div className="space-y-2">
-        {items.length === 0 && <p className="text-gray-500">No items yet.</p>}
-        {items.map((item: any) => (
-          <div key={item.id} className="flex items-center justify-between border p-3 rounded">
-            <span>{item.title}</span>
-            <button
-              onClick={() => handleEdit(item)}
-              className="bg-blue-500 text-white px-3 py-1 rounded text-sm"
-            >
-              Edit
-            </button>
-          </div>
-        ))}
+      <div className="rd-card">
+        <div className="rd-list">
+          {items.length === 0 && <p className="rd-empty-note">No items yet.</p>}
+          {items.map((item: any) => (
+            <div key={item.id} className="rd-list__row">
+              <span>{item.title}</span>
+              <button onClick={() => handleEdit(item)} className="rd-btn rd-btn--ghost rd-btn--sm">
+                <Pencil size={14} /> Edit
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Pencil, Plus, Save, Trash2 } from 'lucide-react';
 import Upload from '../components/Upload';
+import PageHeader from '../components/PageHeader';
+import Notice from '../components/Notice';
 
 const empty = { id: '', serviceId: '', title: '', description: '' };
 
@@ -101,113 +104,121 @@ const ManageServiceData = () => {
     services.find((s) => s.id === id)?.title || id;
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">
-        {editMode ? 'Edit Service Data' : 'Add Service Data'}
-      </h1>
+    <div className="rd-page">
+      <PageHeader
+        title={editMode ? 'Edit Service Data' : 'Add Service Data'}
+        subtitle="Extra details and photos shown on a service’s own page."
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block mb-1">Service</label>
-          <select
-            className="border p-2 w-full"
-            value={form.serviceId}
-            onChange={(e) => setForm({ ...form, serviceId: e.target.value })}
-            required
-          >
-            <option value="">-- Select a service --</option>
-            {services.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.title}
-              </option>
-            ))}
-          </select>
+      <form onSubmit={handleSubmit} className={`rd-card rd-form ${editMode ? 'rd-card--editing' : ''}`}>
+        <div className="rd-grid">
+          <label className="rd-field">
+            <span className="rd-label">Service</span>
+            <select
+              className="rd-input"
+              value={form.serviceId}
+              onChange={(e) => setForm({ ...form, serviceId: e.target.value })}
+              required
+            >
+              <option value="">Select a service</option>
+              {services.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.title}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="rd-field">
+            <span className="rd-label">Title</span>
+            <input
+              type="text"
+              className="rd-input"
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              required
+            />
+          </label>
         </div>
 
-        <div>
-          <label className="block mb-1">Title</label>
-          <input
-            type="text"
-            className="border p-2 w-full"
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block mb-1">Description</label>
+        <label className="rd-field">
+          <span className="rd-label">Description</span>
           <textarea
-            className="border p-2 w-full"
+            className="rd-input"
             rows={4}
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             required
           />
-        </div>
+        </label>
 
         <Upload onImagesUpload={(urls) => Array.isArray(urls) && urls.length && setImg(urls)} />
 
-        <div className="flex gap-2">
-          <button type="submit" className="bg-blue-500 text-white px-4 py-2">
+        <div className="rd-actions">
+          <button type="submit" className="rd-btn rd-btn--primary">
+            {editMode ? <Save size={16} /> : <Plus size={16} />}
             {editMode ? 'Update' : 'Add'}
           </button>
           {editMode && (
-            <button type="button" onClick={reset} className="bg-gray-400 text-white px-4 py-2">
+            <button type="button" onClick={reset} className="rd-btn rd-btn--ghost">
               Cancel
             </button>
           )}
         </div>
       </form>
 
-      {message && <p className="mt-4">{message}</p>}
+      <Notice text={message} />
 
-      <h2 className="text-xl font-bold mt-8">All Service Data</h2>
-      <table className="table-auto border-collapse border border-gray-300 w-full mt-4">
-        <thead>
-          <tr>
-            <th className="border border-gray-300 p-2">Service</th>
-            <th className="border border-gray-300 p-2">Title</th>
-            <th className="border border-gray-300 p-2">Description</th>
-            <th className="border border-gray-300 p-2">Image</th>
-            <th className="border border-gray-300 p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length > 0 ? (
-            rows.map((row) => (
-              <tr key={row.id}>
-                <td className="border border-gray-300 p-2">{serviceTitle(row.serviceId)}</td>
-                <td className="border border-gray-300 p-2">{row.title}</td>
-                <td className="border border-gray-300 p-2">{row.description}</td>
-                <td className="border border-gray-300 p-2">
-                  {row.img?.[0] && <img src={row.img[0]} alt={row.title} className="w-24 h-auto" />}
-                </td>
-                <td className="border border-gray-300 p-2 text-center">
-                  <button
-                    onClick={() => handleEdit(row)}
-                    className="bg-yellow-500 text-white px-4 py-1 rounded mr-2"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(row.id)}
-                    className="bg-red-500 text-white px-4 py-1 rounded"
-                  >
-                    Delete
-                  </button>
+      <div className="rd-section">
+        <span>All service data · {rows.length}</span>
+      </div>
+      <div className="rd-table-wrap">
+        <table className="rd-table">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Service</th>
+              <th>Title</th>
+              <th>Description</th>
+              <th className="is-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length > 0 ? (
+              rows.map((row) => (
+                <tr key={row.id}>
+                  <td style={{ width: 1 }}>
+                    {row.img?.[0] && <img src={row.img[0]} alt={row.title} className="rd-thumb" />}
+                  </td>
+                  <td>
+                    <span className="rd-badge rd-badge--accent">{serviceTitle(row.serviceId)}</span>
+                  </td>
+                  <td className="rd-cell-title">{row.title}</td>
+                  <td className="is-wrap is-muted">
+                    <span className="rd-clamp">{row.description}</span>
+                  </td>
+                  <td className="is-actions">
+                    <div className="rd-row-actions">
+                      <button onClick={() => handleEdit(row)} className="rd-btn rd-btn--ghost rd-btn--sm">
+                        <Pencil size={14} /> Edit
+                      </button>
+                      <button onClick={() => handleDelete(row.id)} className="rd-btn rd-btn--danger rd-btn--sm">
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5} className="rd-empty">
+                  No service data yet.
                 </td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={5} className="border border-gray-300 p-2 text-center">
-                No service data found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

@@ -2,6 +2,8 @@
 "use client"
 import Link from "next/link";
 import ExportButton from "../components/ExportExcel";
+import { Check, Eye, Search, Trash2 } from "lucide-react";
+import PageHeader from "../components/PageHeader";
 import { useState, useEffect } from "react";
 import { redirect, useRouter } from 'next/navigation';
 
@@ -338,146 +340,146 @@ try {
 
 
   return (
-    <div className="container text-[12px]">
-      <div className="flex justify-end items-center space-x-2 mb-4">
-        <input
-          type="text"
-          value={filterClientName}
-          onChange={(e) => setFilterClientName(e.target.value)}
-          placeholder="Filter by Client Name"
-          className="border p-1 text-xs"
-        />
+    <div className="rd-page rd-page--wide">
+      <PageHeader
+        title="Orders"
+        subtitle="Shop orders from the website. Enter the receipt number first, then mark the order paid and fulfilled."
+        actions={<ExportButton allTemp={allTemp} />}
+      />
+
+      <div className="rd-toolbar">
+        <div className="rd-search">
+          <Search size={16} />
+          <input
+            type="text"
+            value={filterClientName}
+            onChange={(e) => setFilterClientName(e.target.value)}
+            placeholder="Client name"
+            className="rd-input"
+          />
+        </div>
         <input
           type="text"
           value={filterReceiptNum}
           onChange={(e) => setFilterReceiptNum(e.target.value)}
-          placeholder="Filter by Receipt #"
-          className="border p-1 text-xs"
+          placeholder="Receipt #"
+          className="rd-input"
         />
         <input
           type="date"
           value={fromDate}
           onChange={(e) => setFromDate(e.target.value)}
-          className="border p-1 text-xs"
+          className="rd-input"
+          aria-label="From date"
+          title="From date"
         />
         <input
           type="date"
           value={toDate}
           onChange={(e) => setToDate(e.target.value)}
-          className="border p-1 text-xs"
+          className="rd-input"
+          aria-label="To date"
+          title="To date"
         />
-
-        <div className="text-xs">
-          <ExportButton allTemp={allTemp} />
-        </div>
       </div>
-      <table className="table table-striped ">
-        <thead>
-          <tr>
-            <th scope="col">Order #</th>
-            <th scope="col">Receipt #</th>
-            <th scope="col">Image</th>
-            <th scope="col">Client Name</th>
-            <th scope="col">Total Amount</th>
-            <th scope="col">Total Items</th>
-            <th scope="col">Code</th>
-            <th scope="col">Date</th>
-            <th scope="col">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredData?.length > 0 ? (
-            filteredData.map((post) => (
-              <tr key={post.id}>
-                <td>{post.oid}</td>
-                <td>
-                  {submittedPosts[post.id] ? (
-                    <p>{updatedNums[post.id] || post.num}</p>
-                  ) : (
-                    <>
-                      <input
-                        type="text"
-                        value={updatedNums[post.id] || post.num || ""}
-                        onChange={(e) => handleInputChange(post.id, e.target.value)}
-                        placeholder="Enter receipt number"
-                        className="border p-1"
-                      />
-                      <button
-                        onClick={() => handleUpdate(post.id)}
-                        className="bg-blue-500 text-white p-1 ml-2"
-                      >
-                        Submit
-                      </button>
-                    </>
-                  )}
-                </td>
 
-                <td>
-                  <img src={post.userInfo[0].img[0]} width={40} height={40} />
-                </td>
-                <td>{post.cartItems.fname}</td>
-                <td>${totals[post.oid] ?? post.total}</td>
-                <td>
-                  {post.userInfo?.reduce(
-                    (acc, item) =>
-                      acc + (isNaN(item.quantity) ? 0 : Number(item.quantity)),
-                    0
-                  )}
-                </td>
-                <td>{post.code}</td>
-                <td>{post.date}</td>
-                <td className="flex space-x-2">
-                  <a
-                    className="text-blue-700 bg-black p-1 w-14 h-8 flex items-center justify-center "
-                    href={`/order1?id=${post.id}`}
-                  >
-                    View
-                  </a>
-                  <button
-                    onClick={() => handleDeleteOrder(post.id)}
-                    className="bg-red-500 text-white p-1 w-14 h-8 "
-                  >
-                    Delete
-                  </button>
-                  <button
-                    className={`p-1 w-14 h-8 ${post.paid ? "bg-blue-500 text-white" : "bg-black text-white"
-                      }`}
-                    onClick={() => !post.paid && handlePaymentUpdate(post.id)}
-                    disabled={
-                      !((updatedNums[post.id] || post.num) && submittedPosts[post.id]) || post.paid
-                    } // Disable if no receipt or not submitted
-                  >
-                    {post.paid ? "Paid" : "Unpaid"}
-                  </button>
-
-                  <button
-                    className={`p-1 w-20 h-8 ${post.fulfillment ? "bg-blue-500 text-white" : "bg-black text-white"
-                      }`}
-                    onClick={() => handlePaymentUpdate1(post.id, post.fulfillment)}
-                    disabled={
-                      !((updatedNums[post.id] || post.num) && submittedPosts[post.id])
-                    } // Disable if no receipt or not submitted
-                  >
-                    {post.fulfillment ? "Fulfilled" : "Unfulfilled"}
-                  </button>
-
-
-
-                </td>
-
-              </tr>
-            ))
-          ) : (
+      <div className="rd-table-wrap">
+        <table className="rd-table">
+          <thead>
             <tr>
-              <td colSpan={8} className="text-center">
-                No matching records found.
-              </td>
+              <th>Order #</th>
+              <th>Receipt #</th>
+              <th>Image</th>
+              <th>Client</th>
+              <th className="is-num">Total</th>
+              <th className="is-num">Items</th>
+              <th>Code</th>
+              <th>Date</th>
+              <th className="is-actions">Actions</th>
             </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {filteredData?.length > 0 ? (
+              filteredData.map((post) => (
+                <tr key={post.id}>
+                  <td className="rd-cell-title">{post.oid}</td>
+                  <td>
+                    {submittedPosts[post.id] ? (
+                      <span className="rd-mono">{updatedNums[post.id] || post.num}</span>
+                    ) : (
+                      <div className="rd-actions" style={{ flexWrap: "nowrap" }}>
+                        <input
+                          type="text"
+                          value={updatedNums[post.id] || post.num || ""}
+                          onChange={(e) => handleInputChange(post.id, e.target.value)}
+                          placeholder="Receipt number"
+                          className="rd-input rd-input--sm"
+                          style={{ width: 150 }}
+                        />
+                        <button onClick={() => handleUpdate(post.id)} className="rd-btn rd-btn--ghost rd-btn--sm">
+                          Submit
+                        </button>
+                      </div>
+                    )}
+                  </td>
 
+                  <td>
+                    <img src={post.userInfo[0].img[0]} width={40} height={40} className="rd-thumb" style={{ width: 40, height: 40 }} />
+                  </td>
+                  <td>{post.cartItems.fname}</td>
+                  <td className="is-num">${totals[post.oid] ?? post.total}</td>
+                  <td className="is-num">
+                    {post.userInfo?.reduce(
+                      (acc, item) =>
+                        acc + (isNaN(item.quantity) ? 0 : Number(item.quantity)),
+                      0
+                    )}
+                  </td>
+                  <td className="rd-mono is-muted">{post.code}</td>
+                  <td className="is-nowrap is-muted">{post.date}</td>
+                  <td className="is-actions">
+                    <div className="rd-row-actions">
+                      <a className="rd-btn rd-btn--ghost rd-btn--sm" href={`/order1?id=${post.id}`}>
+                        <Eye size={14} /> View
+                      </a>
+                      <button
+                        className={`rd-btn rd-btn--sm ${post.paid ? "rd-btn--done" : "rd-btn--primary"}`}
+                        onClick={() => !post.paid && handlePaymentUpdate(post.id)}
+                        disabled={
+                          !((updatedNums[post.id] || post.num) && submittedPosts[post.id]) || post.paid
+                        } // Disable if no receipt or not submitted
+                        title={post.paid ? "Paid" : "Mark as paid (needs the receipt number)"}
+                      >
+                        {post.paid ? <><Check size={14} /> Paid</> : "Unpaid"}
+                      </button>
+                      <button
+                        className={`rd-btn rd-btn--sm ${post.fulfillment ? "rd-btn--done" : "rd-btn--primary"}`}
+                        onClick={() => handlePaymentUpdate1(post.id, post.fulfillment)}
+                        disabled={
+                          !((updatedNums[post.id] || post.num) && submittedPosts[post.id])
+                        } // Disable if no receipt or not submitted
+                        title={post.fulfillment ? "Fulfilled — click to undo" : "Mark as fulfilled (needs the receipt number)"}
+                      >
+                        {post.fulfillment ? <><Check size={14} /> Fulfilled</> : "Unfulfilled"}
+                      </button>
+                      <button onClick={() => handleDeleteOrder(post.id)} className="rd-btn rd-btn--danger rd-btn--sm">
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={9} className="rd-empty">
+                  {allTemp ? "No matching records found." : "Loading…"}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
   )
 }
 

@@ -49,24 +49,26 @@ const Upload = ({ onFilesUpload }) => {
   };
 
   return (
-    <div className="mb-4">
-      <label className="block mb-1 font-bold">Upload Videos</label>
+    <div className="rd-field">
+      <span className="rd-label">Upload videos</span>
       <input
         type="file"
         multiple
         accept="video/*" // Only allow video uploads
         onChange={handleFilesChange}
-        className="border p-2 w-full"
+        className="rd-input"
       />
-      {loading && <p>Uploading...</p>}
-      <div className="mt-2 flex flex-wrap gap-2">
-        {media.map((fileUrl, index) => (
-          <video key={index} controls className="w-24 h-auto">
-            <source src={fileUrl} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-        ))}
-      </div>
+      {loading && <p className="rd-hint">Uploading…</p>}
+      {media.length > 0 && (
+        <div className="rd-thumbs">
+          {media.map((fileUrl, index) => (
+            <video key={index} controls className="rd-video">
+              <source src={fileUrl} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

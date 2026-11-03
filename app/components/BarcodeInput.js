@@ -13,7 +13,7 @@ export default function BarcodeInput({
   onSubmit,
   placeholder = 'Type or scan the barcode',
   className = '',
-  inputClassName = 'font-mono tracking-wide',
+  inputClassName = 'rd-mono',
   autoFocus = false,
 }) {
   return (
@@ -34,7 +34,7 @@ export default function BarcodeInput({
       autoCorrect="off"
       autoCapitalize="off"
       spellCheck={false}
-      className={`w-full border p-2 ${inputClassName} ${className}`}
+      className={`rd-input ${inputClassName} ${className}`}
     />
   );
 }

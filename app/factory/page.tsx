@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import Upload from '../components/Upload';
 import { useRouter } from 'next/navigation';
+import { Pencil, Plus, Save, Trash2 } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
+import Notice from '../components/Notice';
 
 const ManageCategory = () => {
   const [formData, setFormData] = useState({ name: '', img: [] });
@@ -130,101 +133,111 @@ const ManageCategory = () => {
 
  
   return (
-    <div className="container mx-auto p-4 text-[13px]">
-      <h1 className="text-2xl font-bold mb-4">
-        {editMode ? 'Edit Factory' : 'Add Factory'}
-      </h1>
+    <div className="rd-page">
+      <PageHeader title={editMode ? 'Edit Brand' : 'Add Brand'} subtitle="The product brands of the online shop." />
 
-      {/* ✅ ADD / EDIT FORM */}
-      <form onSubmit={editMode ? handleEditSubmit : handleSubmit} className="mb-8 space-y-4">
-        <input
-          type="text"
-          placeholder="Factory Name"
-          value={editMode ? editFormData.name : formData.name}
-          onChange={(e) =>
-            editMode
-              ? setEditFormData({ ...editFormData, name: e.target.value })
-              : setFormData({ ...formData, name: e.target.value })
-          }
-          required
-          className="border p-2 w-full"
-        />
+      {/* ADD / EDIT FORM */}
+      <form
+        onSubmit={editMode ? handleEditSubmit : handleSubmit}
+        className={`rd-card rd-form ${editMode ? 'rd-card--editing' : ''}`}
+      >
+        <label className="rd-field">
+          <span className="rd-label">Name</span>
+          <input
+            type="text"
+            placeholder="Brand name"
+            value={editMode ? editFormData.name : formData.name}
+            onChange={(e) =>
+              editMode
+                ? setEditFormData({ ...editFormData, name: e.target.value })
+                : setFormData({ ...formData, name: e.target.value })
+            }
+            required
+            className="rd-input"
+          />
+        </label>
 
         <Upload key={editFormData.id || 'new'} onImagesUpload={handleImgChange} />
 
-        <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">
-          {editMode ? 'Update Factory' : 'Add Factory'}
-        </button>
-        {editMode && (
-          <button
-            type="button"
-            onClick={() => {
-              setEditMode(false);
-              setEditFormData({ id: '', name: '', img: [] });
-              setImg([]);
-            }}
-            className="bg-gray-500 text-white px-4 py-2 rounded ml-2"
-          >
-            Cancel
+        <div className="rd-actions">
+          <button type="submit" className="rd-btn rd-btn--primary">
+            {editMode ? <Save size={16} /> : <Plus size={16} />}
+            {editMode ? 'Update brand' : 'Add brand'}
           </button>
-        )}
+          {editMode && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditMode(false);
+                setEditFormData({ id: '', name: '', img: [] });
+                setImg([]);
+              }}
+              className="rd-btn rd-btn--ghost"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
 
- 
+      <Notice text={message} />
 
-      {/* ✅ FACTORY TABLE */}
-      <table className="table-auto w-full border-collapse border border-gray-300">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="border p-2 text-left">Image</th>
-            <th className="border p-2 text-left">Name</th> 
-            <th className="border p-2 text-left">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {categories.map((category) => {
-            const fileUrl = category.img?.[0];
-            const isVideo = /\.(mp4|webm|ogg)$/i.test(fileUrl);
-            return (
+      {/* TABLE */}
+      <div className="rd-section">
+        <span>All brands · {categories.length}</span>
+      </div>
+      <div className="rd-table-wrap">
+        <table className="rd-table">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Name</th>
+              <th className="is-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {categories.map((category) => {
+              const fileUrl = category.img?.[0];
+              const isVideo = /\.(mp4|webm|ogg)$/i.test(fileUrl);
+              return (
               <tr key={category.id}>
-                <td className="border p-2">
+                <td style={{ width: 1 }}>
                   {fileUrl ? (
                     isVideo ? (
-                      <video controls className="w-16 h-16 object-cover rounded">
+                      <video controls className="rd-video">
                         <source src={fileUrl} type="video/mp4" />
                       </video>
                     ) : (
-                      <img src={fileUrl} alt={category.name} className="w-16 h-16 object-cover rounded" />
+                      <img src={fileUrl} alt={category.name} className="rd-thumb" />
                     )
                   ) : (
                     '—'
                   )}
                 </td>
-                <td className="border p-2">{category.name}</td>
-
-        
-
-                <td className="border p-2">
-                  <button
-                    onClick={() => handleEdit(category)}
-                    className="bg-yellow-500 text-white px-3 py-1 rounded mr-2"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(category.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded"
-                  >
-                    Delete
-                  </button>
+                <td className="rd-cell-title">{category.name}</td>
+                <td className="is-actions">
+                  <div className="rd-row-actions">
+                    <button onClick={() => handleEdit(category)} className="rd-btn rd-btn--ghost rd-btn--sm">
+                      <Pencil size={14} /> Edit
+                    </button>
+                    <button onClick={() => handleDelete(category.id)} className="rd-btn rd-btn--danger rd-btn--sm">
+                      <Trash2 size={14} /> Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             );
-          })}
-        </tbody>
-      </table>
-
-      {message && <p className="mt-4 text-green-600">{message}</p>}
+            })}
+            {categories.length === 0 && (
+              <tr>
+                <td colSpan={3} className="rd-empty">
+                  No brands yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

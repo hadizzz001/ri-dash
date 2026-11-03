@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Upload from '../components/Upload';
+import { Pencil, Plus, Save, Search, Trash2 } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css'; 
 
@@ -88,7 +90,16 @@ export default function ProductTable() {
  
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
+    <div className="rd-page">
+      <PageHeader
+        title="All Items"
+        subtitle="The services clients book on the website, with their prices."
+        actions={
+          <a href="/products" className="rd-btn rd-btn--primary">
+            <Plus size={16} /> Add item
+          </a>
+        }
+      />
       {editingProduct && (
         <EditProductForm
           key={editingProduct.id}
@@ -98,62 +109,57 @@ export default function ProductTable() {
           onSave={handleUpdate}
         />
       )}
-      <h1 className="text-2xl font-bold mb-4">Item List</h1>
 
       {/* Search Input */}
-      <div className="mb-4">
+      <div className="rd-search" style={{ marginBottom: 16 }}>
+        <Search size={16} />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full border p-2"
-          placeholder="Search by title..."
+          className="rd-input"
+          placeholder="Search by title…"
         />
       </div>
 
- 
-
-      <table className="table-auto w-full border-collapse border border-gray-200 mb-4">
-  <thead>
-    <tr className="bg-gray-100">
-      <th className="border p-2">Title</th> 
-      <th className="border p-2">Price (USD)</th> 
-      <th className="border p-2">Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {filteredProducts.map((product) => {
-      
-      return (
-<tr
-  key={product.id}
-  className={` ${product.stock === "0" ? 'bg-red-500' : ''}`}
->
-  <td className="border p-2">{product.title}</td>
- 
-  <td className="border p-2">{product.price}</td> 
-  <td className="border p-2">
-    <button
-      onClick={() => handleEdit(product)}
-      className="bg-yellow-500 text-white px-2 py-1 mr-2"
-    >
-      Edit
-    </button>
-    <button
-      onClick={() => handleDelete(product.id)}
-      className="bg-red-500 text-white px-2 py-1"
-    >
-      Delete
-    </button>
-  </td>
-</tr>
-
-      );
-    })}
-  </tbody>
-</table>
-
-
+      <div className="rd-table-wrap">
+        <table className="rd-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th className="is-num">Price (USD)</th>
+              <th className="is-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredProducts.map((product) => (
+              <tr key={product.id} className={product.stock === '0' ? 'is-danger' : ''}>
+                <td className="rd-cell-title">{product.title}</td>
+                <td className="is-muted">{product.cat}</td>
+                <td className="is-num">{product.price}</td>
+                <td className="is-actions">
+                  <div className="rd-row-actions">
+                    <button onClick={() => handleEdit(product)} className="rd-btn rd-btn--ghost rd-btn--sm">
+                      <Pencil size={14} /> Edit
+                    </button>
+                    <button onClick={() => handleDelete(product.id)} className="rd-btn rd-btn--danger rd-btn--sm">
+                      <Trash2 size={14} /> Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {filteredProducts.length === 0 && (
+              <tr>
+                <td colSpan={4} className="rd-empty">
+                  {products.length ? 'No item matches this search.' : 'No items yet.'}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -193,63 +199,47 @@ function EditProductForm({ product, usedCategories, onCancel, onSave }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="border p-4 bg-gray-100 rounded">
-      <h2 className="text-xl font-bold mb-4">Edit Item</h2>
+    <form onSubmit={handleSubmit} className="rd-card rd-card--editing rd-form">
+      <div className="rd-card__head" style={{ marginBottom: 0 }}>
+        <div>
+          <h2 className="rd-card__title">Edit item</h2>
+          <p className="rd-card__sub">{product.title}</p>
+        </div>
+      </div>
 
       {/* Title */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">Title</label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full border p-2"
-          required
-        />
-      </div>
+      <label className="rd-field">
+        <span className="rd-label">Title</span>
+        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="rd-input" required />
+      </label>
 
-      {/* Category Dropdown */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">Category</label>
-        <select
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          className="w-full border p-2"
-          required
-        >
-          <option value="">Select category</option>
-          {categoryOptions.map((title) => (
-            <option key={title} value={title}>
-              {title}
-            </option>
-          ))}
-        </select>
-      </div>
+      <div className="rd-grid">
+        {/* Category Dropdown */}
+        <label className="rd-field">
+          <span className="rd-label">Category</span>
+          <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="rd-input" required>
+            <option value="">Select category</option>
+            {categoryOptions.map((title) => (
+              <option key={title} value={title}>
+                {title}
+              </option>
+            ))}
+          </select>
+        </label>
 
-      {/* Price */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">Price</label>
-        <input
-          type="number"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          className="w-full border p-2"
-          required
-        />
+        {/* Price */}
+        <label className="rd-field">
+          <span className="rd-label">Price (USD)</span>
+          <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="rd-input" required />
+        </label>
       </div>
-
- 
 
       {/* Actions */}
-      <div className="flex gap-2">
-        <button type="submit" className="bg-green-500 text-white px-4 py-2">
-          Save
+      <div className="rd-actions">
+        <button type="submit" className="rd-btn rd-btn--primary">
+          <Save size={16} /> Save
         </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="bg-gray-500 text-white px-4 py-2"
-        >
+        <button type="button" onClick={onCancel} className="rd-btn rd-btn--ghost">
           Cancel
         </button>
       </div>

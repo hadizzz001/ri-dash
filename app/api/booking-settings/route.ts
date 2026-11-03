@@ -32,6 +32,16 @@ export async function PUT(req: Request) {
         return NextResponse.json({ error: "Each open day needs its closing time after its opening time." }, { status: 400 });
       }
     }
+    // A country's own calendar: every date needs its closing time after its opening time
+    for (const c of settings.countries) {
+      const bad = c.mode === "dates" && c.dates.find((d) => d.from >= d.until);
+      if (bad) {
+        return NextResponse.json(
+          { error: `${c.name}, ${bad.date}: the closing time must be after the opening time.` },
+          { status: 400 }
+        );
+      }
+    }
     await prisma.$runCommandRaw({
       update: "BookingSettings",
       updates: [{ q: {}, u: { $set: { ...settings, updatedAt: { $date: new Date().toISOString() } } }, upsert: true }],

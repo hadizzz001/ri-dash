@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Save, Trash2 } from 'lucide-react';
 import Upload from '../components/Upload';
+import PageHeader from '../components/PageHeader';
+import Notice from '../components/Notice';
 
 const ManageAboutBanner = () => {
   const [current, setCurrent] = useState<string | null>(null); // banner shown on the site
@@ -66,44 +69,47 @@ const ManageAboutBanner = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      <h1 className="text-2xl font-bold mb-2">About Page Banner</h1>
-      <p className="text-gray-600 mb-6">
-        Shown full width at the top of the About page. Use a wide landscape image (about 1920 × 600);
-        the sides are trimmed a little on phones.
-      </p>
+    <div className="rd-page rd-page--narrow">
+      <PageHeader
+        title="About Banner"
+        subtitle="Shown full width at the top of the About page. Use a wide landscape image (about 1920 × 600); the sides are trimmed a little on phones."
+      />
 
-      <h2 className="text-lg font-bold mb-2">Current banner</h2>
-      {current ? (
-        <>
-          {/* same proportions as the banner on a desktop screen */}
-          <img src={current} alt="" className="w-full aspect-[10/3] object-cover rounded border mb-3" />
-          <button onClick={handleRemove} className="bg-red-500 text-white px-4 py-2 rounded mb-8">
-            Remove Banner
-          </button>
-        </>
-      ) : (
-        <p className="text-gray-500 mb-8">No banner yet. The About page shows without one.</p>
-      )}
+      <Notice text={message} />
 
-      <h2 className="text-lg font-bold mb-2">{current ? 'Replace banner' : 'Add banner'}</h2>
-      <Upload key={uploadKey} onImagesUpload={handleImgChange} />
+      <section className="rd-card">
+        <div className="rd-card__head">
+          <h2 className="rd-card__title">Current banner</h2>
+          {current && (
+            <button onClick={handleRemove} className="rd-btn rd-btn--danger rd-btn--sm">
+              <Trash2 size={14} /> Remove banner
+            </button>
+          )}
+        </div>
+        {current ? (
+          // same proportions as the banner on a desktop screen
+          <img src={current} alt="" className="w-full aspect-[10/3] object-cover rounded-lg border" />
+        ) : (
+          <p className="rd-empty-note">No banner yet. The About page shows without one.</p>
+        )}
+      </section>
 
-      {img && (
-        <>
-          <p className="font-bold mb-2">New banner (not saved yet)</p>
-          <img src={img} alt="" className="w-full aspect-[10/3] object-cover rounded border mb-3" />
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-green-600 text-white px-4 py-2 rounded disabled:opacity-60"
-          >
-            {saving ? 'Saving...' : 'Save Banner'}
-          </button>
-        </>
-      )}
+      <section className="rd-card rd-form">
+        <h2 className="rd-card__title">{current ? 'Replace banner' : 'Add banner'}</h2>
+        <Upload key={uploadKey} onImagesUpload={handleImgChange} />
 
-      {message && <p className="mt-4 text-green-600">{message}</p>}
+        {img && (
+          <>
+            <p className="rd-label">New banner (not saved yet)</p>
+            <img src={img} alt="" className="w-full aspect-[10/3] object-cover rounded-lg border" />
+            <div className="rd-actions">
+              <button onClick={handleSave} disabled={saving} className="rd-btn rd-btn--primary">
+                <Save size={16} /> {saving ? 'Saving…' : 'Save banner'}
+              </button>
+            </div>
+          </>
+        )}
+      </section>
     </div>
   );
 };

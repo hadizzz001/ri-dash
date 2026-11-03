@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import Upload from '../components/Upload';
 import { redirect } from 'next/navigation';
+import { Pencil, Plus, Save, Trash2 } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
+import Notice from '../components/Notice';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css'; 
 
@@ -128,14 +131,17 @@ const ManageService = () => {
   }, [img, editMode]);
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">{editMode ? 'Edit ' : 'Add '}</h1>
-      <form onSubmit={editMode ? handleEditSubmit : handleSubmit} className="space-y-4">
-        <div>
-          <label className="block mb-1">Title</label>
+    <div className="rd-page">
+      <PageHeader title={editMode ? 'Edit News' : 'Add News'} subtitle="News posts shown on the website." />
+      <form
+        onSubmit={editMode ? handleEditSubmit : handleSubmit}
+        className={`rd-card rd-form ${editMode ? 'rd-card--editing' : ''}`}
+      >
+        <label className="rd-field">
+          <span className="rd-label">Title</span>
           <input
             type="text"
-            className="border p-2 w-full"
+            className="rd-input"
             value={editMode ? editFormData.title : formData.title}
             onChange={(e) =>
               editMode
@@ -144,96 +150,103 @@ const ManageService = () => {
             }
             required
           />
-        </div> 
-<div>
-  <label className="block mb-1">Description</label>
-  <ReactQuill
-    theme="snow"
-    value={editMode ? editFormData.description : formData.description}
-    onChange={(value) =>
-      editMode
-        ? setEditFormData({ ...editFormData, description: value })
-        : setFormData({ ...formData, description: value })
-    }
-    style={{ backgroundColor: 'white' }}
-  />
-</div> 
+        </label>
+        <div className="rd-field">
+          <span className="rd-label">Description</span>
+          <ReactQuill
+            theme="snow"
+            className="rd-quill"
+            value={editMode ? editFormData.description : formData.description}
+            onChange={(value) =>
+              editMode
+                ? setEditFormData({ ...editFormData, description: value })
+                : setFormData({ ...formData, description: value })
+            }
+            style={{ backgroundColor: 'white' }}
+          />
+        </div>
         <Upload key={editFormData.id || 'new'} onImagesUpload={handleImgChange} />
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2">
-          {editMode ? 'Update ' : 'Add '}
-        </button>
-        {editMode && (
-          <button
-            type="button"
-            onClick={() => {
-              setEditMode(false);
-              setEditFormData({ id: '', title: '', description: '', img: [] });
-              setImg([]);
-            }}
-            className="bg-gray-500 text-white px-4 py-2 ml-2"
-          >
-            Cancel
+        <div className="rd-actions">
+          <button type="submit" className="rd-btn rd-btn--primary">
+            {editMode ? <Save size={16} /> : <Plus size={16} />}
+            {editMode ? 'Update news' : 'Add news'}
           </button>
-        )}
+          {editMode && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditMode(false);
+                setEditFormData({ id: '', title: '', description: '', img: [] });
+                setImg([]);
+              }}
+              className="rd-btn rd-btn--ghost"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
 
-      {message && <p className="mt-4">{message}</p>}
+      <Notice text={message} />
 
-      <h2 className="text-xl font-bold mt-8">All News</h2>
-      <table className="table-auto border-collapse border border-gray-300 w-full mt-4">
-        <thead>
-          <tr>
-            <th className="border border-gray-300 p-2">Title</th>
-            <th className="border border-gray-300 p-2">Description</th>
-            <th className="border border-gray-300 p-2">Image</th>
-            <th className="border border-gray-300 p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {services.length > 0 ? (
-            services.map((service) => {
-              const fileUrl = service.img[0];
-              const isVideo = /\.(mp4|webm|ogg)$/i.test(fileUrl);
-              return (
-                <tr key={service.id}>
-                  <td className="border border-gray-300 p-2">{service.title}</td>
-                  <td className="border border-gray-300 p-2">{service.description}</td>
-                  <td className="border border-gray-300 p-2">
-                    {isVideo ? (
-                      <video controls className="w-24 h-auto">
-                        <source src={fileUrl} type="video/mp4" />
-                        Your browser does not support the video tag.
-                      </video>
-                    ) : (
-                      <img src={fileUrl} alt="Service" className="w-24 h-auto" />
-                    )}
-                  </td>
-                  <td className="border border-gray-300 p-2 text-center">
-                    <button
-                      onClick={() => handleEdit(service)}
-                      className="bg-yellow-500 text-white px-4 py-1 rounded mr-2"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(service.id)}
-                      className="bg-red-500 text-white px-4 py-1 rounded"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              );
-            })
-          ) : (
+      <div className="rd-section">
+        <span>All news · {services.length}</span>
+      </div>
+      <div className="rd-table-wrap">
+        <table className="rd-table">
+          <thead>
             <tr>
-              <td colSpan={4} className="border border-gray-300 p-2 text-center">
-                No data found.
-              </td>
+              <th>Image</th>
+              <th>Title</th>
+              <th>Description</th>
+              <th className="is-actions">Actions</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {services.length > 0 ? (
+              services.map((service) => {
+                const fileUrl = service.img[0];
+                const isVideo = /\.(mp4|webm|ogg)$/i.test(fileUrl);
+                return (
+                  <tr key={service.id}>
+                    <td style={{ width: 1 }}>
+                      {isVideo ? (
+                        <video controls className="rd-video">
+                          <source src={fileUrl} type="video/mp4" />
+                          Your browser does not support the video tag.
+                        </video>
+                      ) : (
+                        <img src={fileUrl} alt="Service" className="rd-thumb" />
+                      )}
+                    </td>
+                    <td className="rd-cell-title">{service.title}</td>
+                    <td className="is-wrap is-muted">
+                      {/* the description is rich text: show it without the HTML tags */}
+                      <span className="rd-clamp">{String(service.description || '').replace(/<[^>]+>/g, ' ')}</span>
+                    </td>
+                    <td className="is-actions">
+                      <div className="rd-row-actions">
+                        <button onClick={() => handleEdit(service)} className="rd-btn rd-btn--ghost rd-btn--sm">
+                          <Pencil size={14} /> Edit
+                        </button>
+                        <button onClick={() => handleDelete(service.id)} className="rd-btn rd-btn--danger rd-btn--sm">
+                          <Trash2 size={14} /> Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={4} className="rd-empty">
+                  No news yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
       <style
         dangerouslySetInnerHTML={{
           __html: `

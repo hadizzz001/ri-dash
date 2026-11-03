@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
 import Upload from '../components/Upload';
+import { Plus } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
@@ -65,52 +67,54 @@ useEffect(() => {
  
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-4">
-      <h1 className="text-xl font-bold mb-4">Add New Item</h1>
-      <input
-        type="text"
-        placeholder="Title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="w-full border p-2 mb-4"
-        required
-      /> 
- 
+    <div className="rd-page rd-page--narrow">
+      <PageHeader title="Add Item" subtitle="A new service clients can book on the website." />
+      <form onSubmit={handleSubmit} className="rd-card rd-form">
+        <label className="rd-field">
+          <span className="rd-label">Title</span>
+          <input
+            type="text"
+            placeholder="e.g. Hair Repair Treatment"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="rd-input"
+            required
+          />
+        </label>
 
-      <input
-        type="number"
-        step="0.01"
-        placeholder="Price"
-        value={price}
-        onChange={(e) => setPrice(e.target.value)}
-        className="w-full border p-2 mb-4"
-        required
-      />
+        <div className="rd-grid">
+          <label className="rd-field">
+            <span className="rd-label">Price (USD)</span>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="rd-input"
+              required
+            />
+          </label>
 
- 
- <select
-  value={categoryId}
-  onChange={(e) => setCategoryId(e.target.value)}
-  className="w-full border p-2 mb-4"
-  required
->
-  <option value="">Select Category</option>
-  {categories.map((title) => (
-    <option key={title} value={title}>
-      {title}
-    </option>
-  ))}
-</select>
+          <label className="rd-field">
+            <span className="rd-label">Category</span>
+            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="rd-input" required>
+              <option value="">Select category</option>
+              {categories.map((title) => (
+                <option key={title} value={title}>
+                  {title}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
-
- 
-
-      
- 
-
-      <button type="submit" className="bg-green-500 text-white px-4 py-2">
-        Save Item
-      </button>
-    </form>
+        <div className="rd-actions">
+          <button type="submit" className="rd-btn rd-btn--primary">
+            <Plus size={16} /> Save item
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }

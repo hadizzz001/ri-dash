@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Eye, EyeOff, Search, Trash2 } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
+import Notice from '../components/Notice';
 
 const Stars = ({ n }: { n: number }) => (
   <span style={{ color: '#111', letterSpacing: 1 }} title={`${n}/5`}>
@@ -38,53 +41,74 @@ export default function ReviewsPage() {
   const avg = rows.length ? (rows.reduce((a, r) => a + r.rating, 0) / rows.length).toFixed(2) : '—';
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-2">Product Reviews</h1>
-      <p className="mb-4 text-gray-600">{rows.length} reviews · average rating {avg}</p>
-      <input className="border p-2 w-full mb-4" placeholder="Search by product, customer or text…" value={q} onChange={(e) => setQ(e.target.value)} />
-      {msg && <p className="mb-2">{msg}</p>}
+    <div className="rd-page">
+      <PageHeader title="Product Reviews" subtitle={`${rows.length} review${rows.length === 1 ? '' : 's'} · average rating ${avg}`} />
 
-      <table className="table-auto border-collapse border border-gray-300 w-full">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border border-gray-300 p-2">Product</th>
-            <th className="border border-gray-300 p-2">Customer</th>
-            <th className="border border-gray-300 p-2">Rating</th>
-            <th className="border border-gray-300 p-2">Review</th>
-            <th className="border border-gray-300 p-2">Date</th>
-            <th className="border border-gray-300 p-2">Visible</th>
-            <th className="border border-gray-300 p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filtered.map((r) => (
-            <tr key={r.id} style={{ opacity: r.approved ? 1 : 0.55 }}>
-              <td className="border border-gray-300 p-2">
-                <div className="flex items-center gap-2">
-                  {r.productImg && <img src={r.productImg} alt="" style={{ width: 40, height: 40, objectFit: 'cover' }} />}
-                  <span>{r.productTitle}</span>
-                </div>
-              </td>
-              <td className="border border-gray-300 p-2">{r.userName}{r.verified && <span className="ml-1 text-green-700 text-xs">✓ verified</span>}</td>
-              <td className="border border-gray-300 p-2 whitespace-nowrap"><Stars n={r.rating} /></td>
-              <td className="border border-gray-300 p-2" style={{ maxWidth: 420 }}>
-                {r.title && <b className="block">{r.title}</b>}
-                <span className="text-sm">{r.comment}</span>
-              </td>
-              <td className="border border-gray-300 p-2 whitespace-nowrap">{new Date(r.createdAt).toLocaleDateString()}</td>
-              <td className="border border-gray-300 p-2 text-center">
-                <button onClick={() => toggle(r)} className={`px-2 py-1 text-white ${r.approved ? 'bg-green-600' : 'bg-gray-500'}`}>{r.approved ? 'Shown' : 'Hidden'}</button>
-              </td>
-              <td className="border border-gray-300 p-2 text-center">
-                <button onClick={() => remove(r.id)} className="bg-red-500 text-white px-2 py-1">Delete</button>
-              </td>
+      <div className="rd-search" style={{ marginBottom: 16 }}>
+        <Search size={16} />
+        <input className="rd-input" placeholder="Search by product, customer or text…" value={q} onChange={(e) => setQ(e.target.value)} />
+      </div>
+      <Notice text={msg} />
+
+      <div className="rd-table-wrap">
+        <table className="rd-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Customer</th>
+              <th>Rating</th>
+              <th>Review</th>
+              <th>Date</th>
+              <th>Visible</th>
+              <th className="is-actions">Actions</th>
             </tr>
-          ))}
-          {filtered.length === 0 && (
-            <tr><td colSpan={7} className="border border-gray-300 p-4 text-center text-gray-500">No reviews yet.</td></tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filtered.map((r) => (
+              <tr key={r.id} className={r.approved ? '' : 'is-faded'}>
+                <td>
+                  <div className="flex items-center gap-2">
+                    {r.productImg && <img src={r.productImg} alt="" className="rd-thumb" style={{ width: 40, height: 40 }} />}
+                    <span className="rd-cell-title">{r.productTitle}</span>
+                  </div>
+                </td>
+                <td>
+                  {r.userName}
+                  {r.verified && <span className="rd-cell-sub" style={{ color: '#067647' }}>✓ verified buyer</span>}
+                </td>
+                <td className="is-nowrap"><Stars n={r.rating} /></td>
+                <td className="is-wrap">
+                  {r.title && <span className="rd-cell-title" style={{ display: 'block' }}>{r.title}</span>}
+                  <span className="is-muted">{r.comment}</span>
+                </td>
+                <td className="is-nowrap is-muted">{new Date(r.createdAt).toLocaleDateString()}</td>
+                <td>
+                  <button
+                    onClick={() => toggle(r)}
+                    className={`rd-btn rd-btn--sm ${r.approved ? 'rd-btn--ghost' : 'rd-btn--quiet'}`}
+                    title={r.approved ? 'Shown on the website — click to hide' : 'Hidden — click to show'}
+                  >
+                    {r.approved ? <Eye size={14} /> : <EyeOff size={14} />}
+                    {r.approved ? 'Shown' : 'Hidden'}
+                  </button>
+                </td>
+                <td className="is-actions">
+                  <button onClick={() => remove(r.id)} className="rd-btn rd-btn--danger rd-btn--sm">
+                    <Trash2 size={14} /> Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={7} className="rd-empty">
+                  {rows.length ? 'No review matches this search.' : 'No reviews yet.'}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

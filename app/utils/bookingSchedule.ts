@@ -5,7 +5,12 @@
  * BookingSettings collection:
  *
  *  - countries: where an appointment can be booked, with their cities and
- *    time zone (used for the 1-hour reminder emails).
+ *    time zone (used for the 1-hour reminder emails). Each one can be
+ *    locked (the website says it isn't available right now and gives the
+ *    salon's phone) and has a mode:
+ *      "weekly" — the weekly hours and specific dates below;
+ *      "dates"  — only the dates of its own calendar (`dates`), e.g. the
+ *                 days the team travels to KSA.
  *  - weekly:    7 entries, Sunday first (JS getDay()), { open, from, until }.
  *  - overrides: specific dates { date, closed, from, until, note } that
  *    replace the weekly hours of that day (a holiday, a late opening…).
@@ -14,7 +19,17 @@
  */
 
 export type City = [string, string];
-export type Country = { name: string; ar: string; timeZone: string; cities: City[] };
+export type CountryDate = { date: string; from: string; until: string };
+export type CountryMode = "weekly" | "dates";
+export type Country = {
+  name: string;
+  ar: string;
+  timeZone: string;
+  cities: City[];
+  locked: boolean;
+  mode: CountryMode;
+  dates: CountryDate[];
+};
 export type DayHours = { open: boolean; from: string; until: string };
 export type Override = { date: string; closed: boolean; from: string; until: string; note?: string };
 export type BookingSettings = { countries: Country[]; weekly: DayHours[]; overrides: Override[] };
@@ -133,10 +148,13 @@ const LEBANON_CITIES: City[] = [
   ['Zouk Mosbeh', 'ذوق مصبح'],
 ];
 
+/** Open for booking on the weekly hours (a new or default country). */
+export const bookable = () => ({ locked: false, mode: "weekly" as CountryMode, dates: [] as CountryDate[] });
+
 export const DEFAULT_COUNTRIES: Country[] = [
-  { name: "Lebanon", ar: "لبنان", timeZone: "Asia/Beirut", cities: LEBANON_CITIES },
-  { name: "KSA", ar: "السعودية", timeZone: "Asia/Riyadh", cities: [["Riyadh", "الرياض"], ["Jeddah", "جدة"]] },
-  { name: "Kuwait", ar: "الكويت", timeZone: "Asia/Kuwait", cities: [["Kuwait City", "مدينة الكويت"]] },
+  { name: "Lebanon", ar: "لبنان", timeZone: "Asia/Beirut", cities: LEBANON_CITIES, ...bookable() },
+  { name: "KSA", ar: "السعودية", timeZone: "Asia/Riyadh", cities: [["Riyadh", "الرياض"], ["Jeddah", "جدة"]], ...bookable() },
+  { name: "Kuwait", ar: "الكويت", timeZone: "Asia/Kuwait", cities: [["Kuwait City", "مدينة الكويت"]], ...bookable() },
 ];
 
 export const DEFAULT_WEEKLY: DayHours[] = Array.from({ length: 7 }, () => ({ open: true, from: "08:00", until: "24:00" }));
@@ -149,6 +167,21 @@ export const TIME_ZONES = [
 
 const isTime = (v: any) => typeof v === "string" && /^(([01]\d|2[0-3]):[0-5]\d|24:00)$/.test(v);
 const isIso = (v: any) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+
+/** A country's own calendar: one entry per date, oldest first. */
+export function normalizeDates(list: any): CountryDate[] {
+  const byDate = new Map<string, CountryDate>();
+  (Array.isArray(list) ? list : [])
+    .filter((d: any) => isIso(d?.date))
+    .forEach((d: any) =>
+      byDate.set(d.date, {
+        date: d.date,
+        from: isTime(d.from) ? d.from : "08:00",
+        until: isTime(d.until) ? d.until : "24:00",
+      })
+    );
+  return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
 
 /** Cleans what the page sends / what is stored; anything missing falls back to the defaults. */
 export function normalizeSettings(raw: any): BookingSettings {
@@ -163,6 +196,9 @@ export function normalizeSettings(raw: any): BookingSettings {
               Array.isArray(x) ? [String(x[0] || "").trim(), String(x[1] || "").trim()] : [String(x || "").trim(), ""]
             )
             .filter((x: City) => x[0]) as City[],
+          locked: c?.locked === true,
+          mode: (c?.mode === "dates" ? "dates" : "weekly") as CountryMode,
+          dates: normalizeDates(c?.dates),
         }))
         .filter((c: Country) => c.name && c.cities.length)
     : [];
@@ -201,8 +237,18 @@ export function slotsBetween(from: string, until: string): string[] {
   return out;
 }
 
-/** The open start times of a date ("YYYY-MM-DD") under these settings. */
-export function hoursFor(settings: BookingSettings, iso: string): string[] {
+/**
+ * The open start times of a date ("YYYY-MM-DD") under these settings, in an
+ * appointment country when one is given: none if it is locked, its own
+ * calendar's hours if it has one, otherwise the specific date or weekday.
+ */
+export function hoursFor(settings: BookingSettings, iso: string, country?: string): string[] {
+  const c = country ? settings.countries.find((x) => x.name === country) : undefined;
+  if (c?.locked) return [];
+  if (c?.mode === "dates") {
+    const own = c.dates.find((x) => x.date === iso);
+    return own ? slotsBetween(own.from, own.until) : [];
+  }
   const o = settings.overrides.find((x) => x.date === iso);
   if (o) return o.closed ? [] : slotsBetween(o.from, o.until);
   const [y, m, d] = iso.split("-").map(Number);

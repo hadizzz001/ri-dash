@@ -103,8 +103,11 @@ const formatUSD = (value) => {
   };
 
   return (
-    <button onClick={handleExport} className="px-4 py-2 bg-blue-600 text-white rounded mb-5">
-      Export
+    <button type="button" onClick={handleExport} className="rd-btn rd-btn--ghost">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
+      </svg>
+      Export to Excel
     </button>
   );
 };

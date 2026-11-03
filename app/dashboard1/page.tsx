@@ -6,6 +6,8 @@ import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
 import ExportToExcel from '../components/ExportToExcel';
 import BarcodeInput from '../components/BarcodeInput';
+import { Pencil, Plus, Save, Search, Trash2, X } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
 
 const barcodeKey = (v) => String(v ?? '').replace(/[\s-]+/g, '').toLowerCase();
 const sameBarcode = (a, b) => !!a && !!b && barcodeKey(a) === barcodeKey(b);
@@ -129,7 +131,19 @@ export default function ProductTable() {
 
 
   return (
-    <div className="max-w-7xl mx-auto p-4 text-[12px]">
+    <div className="rd-page rd-page--wide">
+      <PageHeader
+        title="All Products"
+        subtitle="The products of the online shop. Type a title or scan a barcode — an exact barcode opens the product."
+        actions={
+          <>
+            <ExportToExcel products={products} />
+            <a href="/products1" className="rd-btn rd-btn--primary">
+              <Plus size={16} /> Add product
+            </a>
+          </>
+        }
+      />
       {editingProduct && (
         <EditProductForm
           key={editingProduct.id}
@@ -138,28 +152,27 @@ export default function ProductTable() {
           onSave={handleUpdate}
         />
       )}
-      <h1 className="text-2xl font-bold mb-4">Product List</h1>
 
-      {/* Search Input — type a title, type/scan a barcode */}
-      <div className="mb-4">
-        <BarcodeInput
-          value={searchQuery}
-          onChange={setSearchQuery}
-          onSubmit={openByBarcode}
-          placeholder="Search by title or barcode..."
-          inputClassName=""
-          autoFocus
-        />
-      </div>
-
-      {/* Category Filter */}
-      <div className="mb-4">
+      {/* Search (type a title, type/scan a barcode) + category filter */}
+      <div className="rd-toolbar">
+        <div className="rd-search" style={{ flexGrow: 2 }}>
+          <Search size={16} />
+          <BarcodeInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            onSubmit={openByBarcode}
+            placeholder="Search by title or barcode…"
+            inputClassName=""
+            autoFocus
+          />
+        </div>
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="w-full border p-2"
+          className="rd-input"
+          aria-label="Category"
         >
-          <option value="">Select a category</option>
+          <option value="">All categories</option>
           {categories.map((category) => (
             <option key={category.id} value={category.name}>
               {category.name}
@@ -168,24 +181,19 @@ export default function ProductTable() {
         </select>
       </div>
 
-      <ExportToExcel products={products} />
-
- 
-
-
-
-      <table className="table-auto w-full border-collapse border border-gray-200 mb-4">
+      <div className="rd-table-wrap">
+      <table className="rd-table">
         <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">Title</th>
-            <th className="border p-2">Barcode</th>
-            {/* <th className="border p-2">Pic</th> */}
-            <th className="border p-2">Price (USD)</th>
-            <th className="border p-2">Category</th>
-            <th className="border p-2">Type</th>
-            <th className="border p-2">Stock</th>
-            {/* <th className="border p-2">Colors & Qty</th>  */}
-            <th className="border p-2">Actions</th>
+          <tr>
+            <th>Title</th>
+            <th>Barcode</th>
+            {/* <th>Pic</th> */}
+            <th className="is-num">Price (USD)</th>
+            <th>Category</th>
+            <th>Type</th>
+            <th className="is-num">Stock</th>
+            {/* <th>Colors & Qty</th>  */}
+            <th className="is-actions">Actions</th>
           </tr>
         </thead>
 
@@ -230,9 +238,9 @@ export default function ProductTable() {
 
             let rowClass = "";
             if (isOutOfStockSingle || allColorsQtyZero || allSizesQtyZero) {
-              rowClass = "bg-red-300";
+              rowClass = "is-danger";
             } else if (isLowStock) {
-              rowClass = "bg-yellow-300";
+              rowClass = "is-warn";
             }
 
 
@@ -242,8 +250,8 @@ export default function ProductTable() {
             return (
               <tr key={product.id} className={rowClass}>
 
-                <td className="border p-2">{product.title}</td>
-                <td className="border p-2 font-mono">{product.barcode || '—'}</td>
+                <td className="rd-cell-title">{product.title}</td>
+                <td className="rd-mono is-muted is-nowrap">{product.barcode || '—'}</td>
                 {/* <td className="border p-2">
                   {isVideo ? (
                     <video controls className="w-24 h-auto">
@@ -254,11 +262,11 @@ export default function ProductTable() {
                     <img src={fileUrl} alt="Product" className="w-24 h-auto" />
                   )}
                 </td> */}
-<td className="border p-2">
+<td className="is-num">
   {product.sale === "yes" && product.price && product.price !== product.discount ? (
     <span>
-      <span className="line-through text-red-600 mr-1">${product.price}</span>
-      <span className="font-bold text-green-600">${product.discount}</span>
+      <span className="is-muted" style={{ textDecoration: 'line-through', marginRight: 6 }}>${product.price}</span>
+      <span style={{ fontWeight: 600, color: '#067647' }}>${product.discount}</span>
     </span>
   ) : (
     `$${product.discount || product.price}`
@@ -267,10 +275,12 @@ export default function ProductTable() {
 
 
 
-                <td className="border p-2">{product.category}</td>
-                <td className="border p-2">{product.type}</td>
+                <td>{product.category}</td>
+                <td className="is-muted">{product.type}</td>
 
-                <td className="border p-2">
+                <td className="is-num">
+                  {rowClass === 'is-danger' && <span className="rd-badge rd-badge--danger" style={{ marginRight: 6 }}>Out of stock</span>}
+                  {rowClass === 'is-warn' && <span className="rd-badge rd-badge--warn" style={{ marginRight: 6 }}>Low</span>}
                   {product.type === 'single' && product.stock}
 
                   {product.type === 'collection' && product.color && !product.color[0]?.sizes &&
@@ -319,33 +329,37 @@ export default function ProductTable() {
 
 
 
-                <td className="border p-2">
-                  <button
-                    onClick={() => handleEdit(product)}
-                    className="bg-yellow-500 text-white px-2 py-1 mr-2"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(product.id)}
-                    className="bg-red-500 text-white px-2 py-1"
-                  >
-                    Delete
-                  </button>
+                <td className="is-actions">
+                  <div className="rd-row-actions">
+                    <button onClick={() => handleEdit(product)} className="rd-btn rd-btn--ghost rd-btn--sm">
+                      <Pencil size={14} /> Edit
+                    </button>
+                    <button onClick={() => handleDelete(product.id)} className="rd-btn rd-btn--danger rd-btn--sm">
+                      <Trash2 size={14} /> Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             );
           })}
           {products.length > 0 && filteredProducts.length === 0 && (
             <tr>
-              <td colSpan={7} className="border p-4 text-center text-gray-500">
+              <td colSpan={7} className="rd-empty">
                 No products match “{searchQuery.trim()}”.
+              </td>
+            </tr>
+          )}
+          {products.length === 0 && (
+            <tr>
+              <td colSpan={7} className="rd-empty">
+                No products yet.
               </td>
             </tr>
           )}
         </tbody>
 
       </table>
+      </div>
 
 
     </div>
@@ -509,87 +523,91 @@ const discountedPrice = Number(discountPrice).toFixed(2);
 
 
   return (
-    <form onSubmit={handleSubmit} className="border p-4 bg-gray-100 rounded text-[12px]">
-      <h2 className="text-xl font-bold mb-4">Edit Product</h2>
+    <form onSubmit={handleSubmit} className="rd-card rd-card--editing rd-form">
+      <div className="rd-card__head" style={{ marginBottom: 0 }}>
+        <div>
+          <h2 className="rd-card__title">Edit product</h2>
+          <p className="rd-card__sub">{product.title}</p>
+        </div>
+        <button type="button" onClick={onCancel} className="rd-btn rd-btn--quiet rd-btn--sm rd-btn--icon" aria-label="Close">
+          <X size={16} />
+        </button>
+      </div>
 
-      <label className="font-bold">Title</label>
-      <input className="border p-2 w-full mb-3" value={title} onChange={(e) => setTitle(e.target.value)} />
+      <div className="rd-grid">
+        <label className="rd-field">
+          <span className="rd-label">Title</span>
+          <input className="rd-input" value={title} onChange={(e) => setTitle(e.target.value)} />
+        </label>
+        <div className="rd-field">
+          <span className="rd-label">Barcode</span>
+          <BarcodeInput value={barcode} onChange={setBarcode} />
+        </div>
+      </div>
 
-      <label className="font-bold">Barcode</label>
-      <BarcodeInput value={barcode} onChange={setBarcode} className="mb-3" />
+      {/* CATEGORY / SUB-CATEGORY / BRAND */}
+      <div className="rd-grid">
+        <label className="rd-field">
+          <span className="rd-label">Category</span>
+          <select className="rd-input" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+            <option value="">Select category</option>
+            {withCurrent(categories, product.category).map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </label>
+        <label className="rd-field">
+          <span className="rd-label">Sub-category</span>
+          <select className="rd-input" value={selectedSub} onChange={(e) => setSelectedSub(e.target.value)}>
+            <option value="">Select sub-category</option>
+            {withCurrent(subCategories, product.sub).map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </label>
+        <label className="rd-field">
+          <span className="rd-label">Brand</span>
+          <select className="rd-input" value={selectedFactory} onChange={(e) => setSelectedFactory(e.target.value)}>
+            <option value="">Select brand</option>
+            {withCurrent(factories, product.factory).map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </label>
+      </div>
 
-      {/* CATEGORY */}
-      <label className="font-bold">Category</label>
-      <select className="border p-2 w-full mb-2" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-        <option value="">Select Category</option>
-        {withCurrent(categories, product.category).map((n) => <option key={n} value={n}>{n}</option>)}
-      </select>
-
-      <label className="font-bold">Sub-Category</label>
-      <select className="border p-2 w-full mb-2" value={selectedSub} onChange={(e) => setSelectedSub(e.target.value)}>
-        <option value="">Select Sub-Category</option>
-        {withCurrent(subCategories, product.sub).map((n) => <option key={n} value={n}>{n}</option>)}
-      </select>
-
-      <label className="font-bold">Brand</label>
-      <select className="border p-2 w-full mb-4" value={selectedFactory} onChange={(e) => setSelectedFactory(e.target.value)}>
-        <option value="">Select Factory</option>
-        {withCurrent(factories, product.factory).map((n) => <option key={n} value={n}>{n}</option>)}
-      </select>
-
-      {/* TYPE */}
-      <label className="font-bold">Product Type</label>
-      <div className="flex gap-4 mb-4">
-        <label><input type="radio" checked={type === "single"} onChange={() => setType("single")} /> Single</label>
+      {/* TYPE + SALE */}
+      <div className="rd-options">
+        <label className="rd-check">
+          <input type="radio" checked={type === "single"} onChange={() => setType("single")} /> Single
+        </label>
         {/* <label><input type="radio" checked={type === "collection"} onChange={() => setType("collection")} /> Collection</label> */}
-      </div>
-
-      {/* ARRIVAL CHECKBOX */}
-      {/* <div className="mb-4">
-        <label className="font-bold flex items-center gap-2">
-          <input 
-            type="checkbox" 
-            checked={arrival === "yes"} 
-            onChange={(e) => setArrival(e.target.checked ? "yes" : "no")}
-          />
-          New Arrival
-        </label>
-      </div> */}
-
-      {/* SALE CHECKBOX */}
-      <div className="mb-4">
-        <label className="font-bold flex items-center gap-2">
-          <input 
-            type="checkbox" 
-            checked={sale === "yes"} 
-            onChange={(e) => setSale(e.target.checked ? "yes" : "no")}
-          />
-          Sale
+        <label className="rd-check">
+          <input type="checkbox" checked={sale === "yes"} onChange={(e) => setSale(e.target.checked ? "yes" : "no")} />
+          On sale
         </label>
       </div>
 
-      {type === "single" && (
-        <>
-        <label className="font-bold">Stock</label>
-        <input type="number" placeholder="Stock" className="border p-2 w-full mb-4" value={stock} onChange={(e) => setStock(e.target.value)} />
-        </>
-      )}
-
-      {sale === "yes" && (
-      <>
-      <label className="font-bold">Price</label>
-      <input type="number" placeholder="Price" className="border p-2 w-full mb-2" value={price} onChange={(e) => setPrice(e.target.value)} />
-      </>
-      )}
-<label className="font-bold">Discount Price</label>
-<input
-  type="number"
-  step="0.01"
-  placeholder="Discount Price"
-  className="border p-2 w-full mb-4"
-  value={discountPrice}
-  onChange={(e) => setDiscountPrice(e.target.value)}
-/>
+      {/* STOCK + PRICES */}
+      <div className="rd-grid">
+        {type === "single" && (
+          <label className="rd-field">
+            <span className="rd-label">Stock</span>
+            <input type="number" placeholder="Stock" className="rd-input" value={stock} onChange={(e) => setStock(e.target.value)} />
+          </label>
+        )}
+        {sale === "yes" && (
+          <label className="rd-field">
+            <span className="rd-label">Original price</span>
+            <input type="number" placeholder="Price" className="rd-input" value={price} onChange={(e) => setPrice(e.target.value)} />
+          </label>
+        )}
+        <label className="rd-field">
+          <span className="rd-label">{sale === "yes" ? "Sale price" : "Price"}</span>
+          <input
+            type="number"
+            step="0.01"
+            placeholder="0.00"
+            className="rd-input"
+            value={discountPrice}
+            onChange={(e) => setDiscountPrice(e.target.value)}
+          />
+        </label>
+      </div>
 
       {/* ✅ COLORS + SIZES */}
       {type === "collection" && (
@@ -645,36 +663,40 @@ const discountedPrice = Number(discountPrice).toFixed(2);
         </div>
       )}
 
-      <label className="font-bold">Description</label>
-      <ReactQuill value={description} onChange={setDescription} className="mb-4" />
+      <div className="rd-field">
+        <span className="rd-label">Description</span>
+        <ReactQuill value={description} onChange={setDescription} className="rd-quill" />
+      </div>
 
       {/* Current Images */}
-      <label className="font-bold">Current Images</label>
-      <div className="flex flex-wrap gap-2 mb-4 mt-2">
-        {img && img.length > 0 ? (
-          img.map((imgUrl, index) => (
-            <div key={index} className="relative">
-              <img src={imgUrl} alt={`Product ${index}`} className="w-24 h-24 object-cover border" />
-              <button
-                type="button"
-                onClick={() => setImg(img.filter((_, i) => i !== index))}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
-              >
-                ✕
-              </button>
-            </div>
-          ))
-        ) : (
-          <p className="text-gray-500">No images uploaded</p>
-        )}
+      <div className="rd-field">
+        <span className="rd-label">Current images</span>
+        <div className="rd-thumbs">
+          {img && img.length > 0 ? (
+            img.map((imgUrl, index) => (
+              <div key={index} className="rd-imgx">
+                <img src={imgUrl} alt={`Product ${index}`} className="rd-thumb" />
+                <button type="button" onClick={() => setImg(img.filter((_, i) => i !== index))} aria-label="Remove this image" title="Remove this image">
+                  <X size={12} />
+                </button>
+              </div>
+            ))
+          ) : (
+            <p className="rd-hint">No images uploaded</p>
+          )}
+        </div>
       </div>
 
       <Upload onImagesUpload={(newUrls) => setImg([...img, ...newUrls])} />
 
-      <button className="bg-green-500 w-full text-white py-2 rounded">Save Product</button>
-      <button type="button" onClick={onCancel} className="bg-gray-500 text-white w-full py-2 rounded mt-2">
-        Cancel
-      </button>
+      <div className="rd-actions">
+        <button type="submit" className="rd-btn rd-btn--primary">
+          <Save size={16} /> Save product
+        </button>
+        <button type="button" onClick={onCancel} className="rd-btn rd-btn--ghost">
+          Cancel
+        </button>
+      </div>
     </form>
   );
 }

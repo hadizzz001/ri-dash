@@ -35,6 +35,8 @@ import {
 interface SidebarProps {
   isOpen: boolean;
   toggleSidebar: () => void;
+  /** A page was picked: the menu closes right away */
+  onNavigate?: () => void;
 }
 
 const LOGO_URL =
@@ -93,7 +95,10 @@ const GROUPS: { title: string; items: Item[] }[] = [
   },
 ];
 
-export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
+/** Every menu link; page headers show the icon of their link (PageHeader.tsx). */
+export const NAV_ITEMS: Item[] = GROUPS.flatMap((g) => g.items);
+
+export default function Sidebar({ isOpen, toggleSidebar, onNavigate }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -119,6 +124,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
                 <a
                   key={label}
                   href={href}
+                  onClick={onNavigate}
                   className={`rd-side__link ${pathname === href && label !== "View Appointments" ? "is-active" : ""}`}
                 >
                   <Icon size={17} strokeWidth={1.8} />
