@@ -1,8 +1,8 @@
 import prisma from "../../../prisma";
 import { NextResponse } from "next/server";
-import { buildUpdate, findClash } from "./appointmentData";
+import { buildUpdate, findClash, timeZoneOfCountry } from "./appointmentData";
 import { scheduleHourReminders } from "./hourReminder";
-import { makeReference, newObjectId } from "../../utils/appointments";
+import { TOO_SOON_ERROR, bookingCutoff, isTooSoon, makeReference, newObjectId } from "../../utils/appointments";
 
 export async function main() {
     try {
@@ -54,6 +54,11 @@ export const POST = async (req: Request) => {
             {}
         );
         if (errors.length) return NextResponse.json({ error: errors.join(". ") }, { status: 400 });
+
+        // `force` below only allows a double booking, never this
+        if (isTooSoon(order.date, order.hour, bookingCutoff(await timeZoneOfCountry(order.country)))) {
+            return NextResponse.json({ error: TOO_SOON_ERROR }, { status: 400 });
+        }
 
         if (!body.force) {
             const clash = await findClash(order as any);

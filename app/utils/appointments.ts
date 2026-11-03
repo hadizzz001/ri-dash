@@ -6,6 +6,8 @@
  *  - Home service doubles the services inside Lebanon.
  *  - Tax applies only once a city outside Beirut is set.
  *  - Bookings outside Lebanon are confirmed with a 25% deposit.
+ *  - A new appointment has to start more than 3 hours from now, on the clock
+ *    of its country. Editing or moving an existing one isn't limited.
  */
 
 export const LEBANON = "Lebanon";
@@ -51,6 +53,32 @@ export const OPEN_HOURS = Array.from(
 );
 
 export const COUNTRIES = ["Lebanon", "KSA", "Kuwait"];
+
+export const DEFAULT_TIME_ZONE = "Asia/Beirut";
+export const TOO_SOON_ERROR = "New appointments must start more than 3 hours from now.";
+
+const MIN_NOTICE_MS = 3 * 60 * 60 * 1000;
+
+/** What the clock of a time zone will show in 3 hours: a new appointment has to start after this. */
+export function bookingCutoff(timeZone: string, now = Date.now()) {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+      .formatToParts(new Date(now + MIN_NOTICE_MS))
+      .map((x) => [x.type, x.value])
+  );
+  return { date: `${p.year}-${p.month}-${p.day}`, hour: `${p.hour}:${p.minute}` };
+}
+
+export const isTooSoon = (date: string, hour: string, cutoff: { date: string; hour: string }) =>
+  date < cutoff.date || (date === cutoff.date && hour <= cutoff.hour);
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 

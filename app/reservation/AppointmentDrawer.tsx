@@ -3,13 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   COUNTRIES,
+  DEFAULT_TIME_ZONE,
   LEBANON,
   OPEN_HOURS,
   SERVICE_TYPES,
   STAFF,
   STATUSES,
+  TOO_SOON_ERROR,
+  bookingCutoff,
   computeTotals,
   defaultTaxPercent,
+  isTooSoon,
 } from "../utils/appointments";
 import { buildUpdateMessage, messageLang, whatsappLink } from "../utils/appointmentMessage";
 import { Copy, MessageCircle, Send, X } from "lucide-react";
@@ -62,6 +66,7 @@ type Props = {
   services: Service[];
   orders?: any[];
   countries?: string[];
+  timeZones?: Record<string, string>;
   globalTax: number;
   saving: boolean;
   error: string;
@@ -82,6 +87,7 @@ export default function AppointmentDrawer({
   services,
   orders = [],
   countries = COUNTRIES,
+  timeZones = {},
   globalTax,
   saving,
   error,
@@ -241,8 +247,17 @@ export default function AppointmentDrawer({
       .filter((o) => o.date === d.date && o.id !== d.id && o.status !== "cancelled")
       .map((o) => o.hour)
   );
-  const freeHours = OPEN_HOURS.filter((h) => !taken.has(h));
-  const hours = !d.hour || freeHours.includes(d.hour) ? freeHours : [d.hour, ...freeHours];
+  // A new appointment can't be in the next 3 hours (same rule as the API)
+  const cutoff = bookingCutoff(timeZones[d.country] || DEFAULT_TIME_ZONE);
+  const tooSoon = (h: string) => isNew && !!d.date && isTooSoon(d.date, h, cutoff);
+  const hourTooSoon = !!d.hour && tooSoon(d.hour);
+  // Another date or country was picked, or time went by: that time has to be chosen again
+  useEffect(() => {
+    if (hourTooSoon) setD((prev) => ({ ...prev, hour: "" }));
+  }, [hourTooSoon]);
+
+  const freeHours = OPEN_HOURS.filter((h) => !taken.has(h) && !tooSoon(h));
+  const hours = !d.hour || hourTooSoon || freeHours.includes(d.hour) ? freeHours : [d.hour, ...freeHours];
   const hourTaken = !!d.hour && taken.has(d.hour);
   const initials = (d.name || "?")
     .split(/\s+/)
@@ -333,7 +348,7 @@ export default function AppointmentDrawer({
             <div className="fz-row3">
               <div className="fz-field">
                 <label htmlFor="fz-date">Date *</label>
-                <input id="fz-date" type="date" value={d.date} onChange={(e) => set({ date: e.target.value })} />
+                <input id="fz-date" type="date" min={isNew ? cutoff.date : undefined} value={d.date} onChange={(e) => set({ date: e.target.value })} />
               </div>
               <div className="fz-field">
                 <label htmlFor="fz-hour">Time *</label>
@@ -346,8 +361,10 @@ export default function AppointmentDrawer({
                     </option>
                   ))}
                 </select>
-                {freeHours.length === 0 && (
-                  <small style={{ color: "#dc2626" }}>No free times on this day.</small>
+                {!d.hour && OPEN_HOURS.some(tooSoon) ? (
+                  <small style={{ color: "#dc2626" }}>{TOO_SOON_ERROR}</small>
+                ) : (
+                  freeHours.length === 0 && <small style={{ color: "#dc2626" }}>No free times on this day.</small>
                 )}
               </div>
               <div className="fz-field">

@@ -16,14 +16,19 @@ import "./calendar.css";
 import AppointmentDrawer, { Draft, Service, statusOf } from "./AppointmentDrawer";
 import { sendEmail } from "../api/sendEmail/sendEmail";
 import {
+  DEFAULT_TIME_ZONE,
+  LEBANON,
   OPEN_FROM,
   OPEN_UNTIL,
   STAFF,
   STATUSES,
+  TOO_SOON_ERROR,
   UNASSIGNED,
+  bookingCutoff,
   cartMinutes,
   defaultTaxPercent,
   discountPercentOf,
+  isTooSoon,
 } from "../utils/appointments";
 
 /* ------------------------------------------------------------- helpers */
@@ -165,6 +170,7 @@ export default function AppointmentsCalendar() {
   const [services, setServices] = useState<Service[]>([]);
   const [globalTax, setGlobalTax] = useState(0);
   const [countries, setCountries] = useState<string[] | undefined>(undefined);
+  const [timeZones, setTimeZones] = useState<Record<string, string>>({});
 
   const [view, setView] = useState<"day" | "week" | "list">("day");
   const [date, setDate] = useState(() => toIso(new Date()));
@@ -218,7 +224,11 @@ export default function AppointmentsCalendar() {
       .catch(() => setGlobalTax(0));
     fetch("/api/booking-settings")
       .then((r) => r.json())
-      .then((j) => Array.isArray(j?.countries) && setCountries(j.countries.map((c: any) => c.name)))
+      .then((j) => {
+        if (!Array.isArray(j?.countries)) return;
+        setCountries(j.countries.map((c: any) => c.name));
+        setTimeZones(Object.fromEntries(j.countries.map((c: any) => [c.name, c.timeZone])));
+      })
       .catch(() => {});
 
     // New website bookings show up on their own; the red line moves
@@ -300,13 +310,17 @@ export default function AppointmentsCalendar() {
 
   /* --------------------------------------------------------- drawer */
 
+  // New appointments start in Lebanon unless the drawer changes the country
+  const newBookingCutoff = () => bookingCutoff(timeZones[LEBANON] || DEFAULT_TIME_ZONE);
+
   const newDraft = (patch: Partial<Draft> = {}): Draft => ({
     name: "",
     phone: "",
     email: "",
-    country: "Lebanon",
+    country: LEBANON,
     city: "Beirut",
-    date,
+    // Viewing an earlier day: start on the first day that can still be booked
+    date: date < newBookingCutoff().date ? newBookingCutoff().date : date,
     hour: "10:00",
     serviceType: "salon",
     staff: "",
@@ -891,13 +905,15 @@ export default function AppointmentsCalendar() {
                     className={`fz-col ${dragId && hover?.key === col.key ? "is-drop" : ""}`}
                     onMouseMove={(e) => setHover({ key: col.key, min: minuteAt(e, e.currentTarget) })}
                     onMouseLeave={() => setHover(null)}
-                    onClick={(e) =>
+                    onClick={(e) => {
+                      const hour = fromMin(Math.floor(minuteAt(e, e.currentTarget) / 30) * 30);
+                      if (isTooSoon(col.date, hour, newBookingCutoff())) return flash(TOO_SOON_ERROR, true);
                       openNew({
                         date: col.date,
-                        hour: fromMin(Math.floor(minuteAt(e, e.currentTarget) / 30) * 30),
+                        hour,
                         staff: col.staff && col.staff !== UNASSIGNED.id ? col.staff : "",
-                      })
-                    }
+                      });
+                    }}
                     onDragOver={(e) => {
                       e.preventDefault();
                       setHover({ key: col.key, min: minuteAt(e, e.currentTarget) });
@@ -987,6 +1003,7 @@ export default function AppointmentsCalendar() {
           services={services}
           orders={orders}
           countries={countries}
+          timeZones={timeZones}
           globalTax={globalTax}
           saving={saving}
           error={drawerError}

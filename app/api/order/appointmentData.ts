@@ -1,5 +1,7 @@
 import prisma from "../../../prisma";
+import { normalizeSettings } from "../../utils/bookingSchedule";
 import {
+  DEFAULT_TIME_ZONE,
   SERVICE_TYPES,
   STAFF,
   STATUSES,
@@ -106,6 +108,13 @@ export async function findClash(
 ) {
   const same = await prisma.order.findMany({ where: { date, hour } });
   return same.find((o) => o.id !== id && o.status !== "cancelled") || null;
+}
+
+/** The time zone of an appointment country in the booking schedule (Beirut when unknown). */
+export async function timeZoneOfCountry(country: string) {
+  const res: any = await prisma.$runCommandRaw({ find: "BookingSettings", filter: {}, limit: 1 });
+  const { countries } = normalizeSettings(res?.cursor?.firstBatch?.[0] || null);
+  return countries.find((c) => c.name === country)?.timeZone || DEFAULT_TIME_ZONE;
 }
 
 /** Applies `$set` to the website's Booking document (no-op without an id). */
