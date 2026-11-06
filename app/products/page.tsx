@@ -11,7 +11,8 @@ const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 export default function AddProduct() {
   const [title, setTitle] = useState(''); 
-  const [price, setPrice] = useState(''); 
+  const [price, setPrice] = useState('');
+  const [description, setDescription] = useState('');
   const [categories, setCategories] = useState([]);
 const [categoryId, setCategoryId] = useState('');
 
@@ -48,6 +49,7 @@ useEffect(() => {
       title, 
       price,
       cat: categoryId,
+      description,
     };
 
     const response = await fetch('/api/products', {
@@ -108,6 +110,19 @@ useEffect(() => {
             </select>
           </label>
         </div>
+
+        <label className="rd-field">
+          <span className="rd-label">Description <small>(optional)</small></span>
+          <textarea
+            rows={3}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="rd-input"
+          />
+          <span className="rd-hint">
+            Shown under the service name on the website&apos;s booking page. Leave empty to show none.
+          </span>
+        </label>
 
         <div className="rd-actions">
           <button type="submit" className="rd-btn rd-btn--primary">

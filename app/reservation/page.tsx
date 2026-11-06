@@ -69,6 +69,8 @@ const initials = (name = "") =>
 
 const staffOf = (o: any) => STAFF.find((s) => s.id === o.staff) || UNASSIGNED;
 const isCancelled = (o: any) => o.status === "cancelled";
+/** Booked less than 3 hours ahead on the website, and the salon hasn't confirmed it yet. */
+const awaitingWhatsApp = (o: any) => !!o.shortNotice && (o.status || "pending") === "pending";
 
 /** Tinted background for a block, from its team member's colour. */
 const tint = (hex: string, alpha = 0.28) => {
@@ -334,6 +336,8 @@ export default function AppointmentsCalendar() {
 
   const openOrder = (o: any) => {
     setDrawerError("");
+    // However it was opened, the bell stops ringing for it
+    window.dispatchEvent(new CustomEvent("rd:appointment-opened", { detail: o.id }));
     setDrawer({
       isNew: false,
       draft: {
@@ -358,9 +362,47 @@ export default function AppointmentsCalendar() {
         cancelledBy: o.cancelledBy || null,
         lang: o.lang || null,
         clientCountry: o.clientCountry || null,
+        shortNotice: !!o.shortNotice,
       },
     });
   };
+
+  /** A notification was picked in the bell: its appointment opens on its day. */
+  const showAppointment = async (id: string) => {
+    if (drawer) return flash("Close the open appointment first.", true);
+    let o = orders.find((x) => x.id === id);
+    if (!o) {
+      // Newer than the last refresh, or gone
+      const res = await fetch(`/api/order/${id}`, { cache: "no-store" }).catch(() => null);
+      if (!res?.ok) return flash("That appointment no longer exists.", true);
+      o = await res.json();
+      upsert(o);
+    }
+    if (o.date) setDate(o.date);
+    openOrder(o);
+  };
+  const showRef = useRef(showAppointment);
+  showRef.current = showAppointment;
+
+  // On this page the bell asks directly; from another page it links to ?open=<id>
+  useEffect(() => {
+    const onOpen = (e: Event) => showRef.current((e as CustomEvent).detail);
+    window.addEventListener("rd:open-appointment", onOpen);
+    return () => window.removeEventListener("rd:open-appointment", onOpen);
+  }, []);
+  useEffect(() => {
+    if (loading) return;
+    const id = new URLSearchParams(window.location.search).get("open");
+    if (!id) return;
+    window.history.replaceState(null, "", window.location.pathname);
+    showRef.current(id);
+  }, [loading]);
+
+  // The bell has something new: it shows up here right away
+  useEffect(() => {
+    window.addEventListener("rd:notifications", load);
+    return () => window.removeEventListener("rd:notifications", load);
+  }, [load]);
 
   const openNew = (patch: Partial<Draft> = {}) => {
     setDrawerError("");
@@ -822,6 +864,11 @@ export default function AppointmentsCalendar() {
                               <span className="fz-status" style={{ color: st.color, background: tint(st.color, 0.12) }}>
                                 {st.name}
                               </span>
+                              {awaitingWhatsApp(o) && (
+                                <span className="fz-tag fz-tag--wait" style={{ marginLeft: 6 }}>
+                                  WhatsApp
+                                </span>
+                              )}
                             </td>
                           </tr>
                         );
@@ -969,6 +1016,7 @@ export default function AppointmentsCalendar() {
                           title={`${o.hour} ${o.name} — ${(o.cart || []).map((c: any) => c.title).join(", ")}`}
                         >
                           <div className="fz-appt-icons">
+                            {awaitingWhatsApp(o) && <span className="fz-tag fz-tag--wait">WhatsApp</span>}
                             {o.paid && <span className="fz-tag fz-tag--paid">Paid</span>}
                             {o.serviceType === "home" && <span className="fz-tag">Home</span>}
                           </div>

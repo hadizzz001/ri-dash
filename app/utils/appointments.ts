@@ -6,8 +6,10 @@
  *  - Home service doubles the services inside Lebanon.
  *  - Tax applies only once a city outside Beirut is set.
  *  - Bookings outside Lebanon are confirmed with a 25% deposit.
- *  - A new appointment has to start more than 3 hours from now, on the clock
- *    of its country. Editing or moving an existing one isn't limited.
+ *  - A new appointment has to start more than 30 minutes from now, on the
+ *    clock of its country. Editing or moving an existing one isn't limited.
+ *    (A client booking less than 3 hours ahead on the website is asked to
+ *    continue on WhatsApp: Order.shortNotice, status "pending".)
  */
 
 export const LEBANON = "Lebanon";
@@ -55,11 +57,11 @@ export const OPEN_HOURS = Array.from(
 export const COUNTRIES = ["Lebanon", "KSA", "Kuwait"];
 
 export const DEFAULT_TIME_ZONE = "Asia/Beirut";
-export const TOO_SOON_ERROR = "New appointments must start more than 3 hours from now.";
+export const TOO_SOON_ERROR = "New appointments must start more than 30 minutes from now.";
 
-const MIN_NOTICE_MS = 3 * 60 * 60 * 1000;
+const MIN_NOTICE_MS = 30 * 60 * 1000;
 
-/** What the clock of a time zone will show in 3 hours: a new appointment has to start after this. */
+/** What the clock of a time zone will show in 30 minutes: a new appointment has to start after this. */
 export function bookingCutoff(timeZone: string, now = Date.now()) {
   const p = Object.fromEntries(
     new Intl.DateTimeFormat("en-US", {

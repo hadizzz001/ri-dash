@@ -8,7 +8,8 @@ export async function POST(req) {
     const {   
       title, 
 price,
-cat
+cat,
+description
       } = body;
 
 console.log("body are: ",body);
@@ -17,10 +18,11 @@ console.log("body are: ",body);
 
     const product = await prisma.product.create({
       data: {
-        title, 
+        title,
         price,
-cat
-          
+cat,
+        description: typeof description === 'string' ? description.trim() : undefined,
+
       },
     });
 

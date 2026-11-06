@@ -15,13 +15,18 @@ const notFound = () =>
 export async function PATCH(request, { params }) {
   const { id } = params;
   const {
-    title, 
+    title,
     price,
-cat
-     
+cat,
+    description
+
   } = await request.json();
- 
-  
+
+  // Optional: a request without a description leaves the saved one as it is
+  if (description !== undefined && typeof description !== 'string') {
+    return new Response(JSON.stringify({ error: 'Description must be text' }), { status: 400 });
+  }
+  const text = description?.trim();
 
   try {
     if (!isObjectId(id)) {
@@ -32,22 +37,24 @@ cat
           { status: 400 }
         );
       }
+      const fields = { title, price, cat, ...(text !== undefined && { description: text }) };
       const { n } = await prisma.$runCommandRaw({
         update: 'Product',
-        updates: [{ q: { _id: id }, u: { $set: { title, price, cat } } }],
+        updates: [{ q: { _id: id }, u: { $set: fields } }],
       });
       if (!n) return notFound();
-      return new Response(JSON.stringify({ id, title, price, cat }), { status: 200 });
+      return new Response(JSON.stringify({ id, ...fields }), { status: 200 });
     }
 
     // Update product and its specifications
     const updatedProduct = await prisma.product.update({
       where: { id },
       data: {
-        title, 
+        title,
         price,
-cat
-         
+cat,
+        description: text,
+
       },
     });
 

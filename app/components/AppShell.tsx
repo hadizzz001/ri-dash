@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
+import NotificationBell from "./NotificationBell";
 
 // The login screen fills the window on its own: no sidebar, no side margin
 const BARE_PATHS = ["/", "/login"];
@@ -40,6 +41,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         toggleSidebar={() => setIsOpen((prev) => !prev)}
         onNavigate={() => setIsOpen(false)}
       />
+      <NotificationBell menuOpen={isOpen} />
 
       {/* Main content - squeezes/shifts while the sidebar is open */}
       <main className={`flex-grow-1 rd-main ${isOpen ? "is-shifted" : ""}`}>{children}</main>

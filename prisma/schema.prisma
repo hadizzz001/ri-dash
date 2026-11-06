@@ -9,9 +9,11 @@ datasource db {
 
 model Product {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  title       String 
+  title       String
   cat String
-  price       String 
+  price       String
+  // Shown under the service name on the website's booking page
+  description String?
 }
 
 model Cat {
@@ -98,6 +100,9 @@ model Order {
   // Where the client lives (any country), asked on the website next to
   // the appointment country
   clientCountry String?
+  // Booked on the website less than 3 hours ahead: saved as "pending" and the
+  // client was asked to continue on WhatsApp
+  shortNotice Boolean?
 }
 
 // The website's own record of an appointment (my-app/app/api/booking). The

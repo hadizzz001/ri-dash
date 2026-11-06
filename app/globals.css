@@ -21,15 +21,16 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Main area. The menu starts closed on every page; while it is closed on a
-   computer, the left padding keeps the floating menu button off the page. */
+/* Main area. The menu starts closed on every page. On a computer the left
+   padding keeps the floating buttons (menu, notifications) off the page,
+   with the menu closed or open. */
 .rd-main {
   width: 100%;
   min-width: 0;
   padding: 28px 32px 28px 76px;
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.rd-main.is-shifted { margin-left: var(--rd-side-w); padding-left: 32px; }
+.rd-main.is-shifted { margin-left: var(--rd-side-w); }
 @media (max-width: 991px) {
   .rd-main, .rd-main.is-shifted { margin-left: 0; padding: 64px 14px 20px; }
 }

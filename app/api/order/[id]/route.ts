@@ -1,6 +1,7 @@
 import prisma from "../../../../prisma";
 import { buildUpdate, findClash, syncBooking } from "../appointmentData";
 import { resetHourReminder, scheduleHourReminders } from "../hourReminder";
+import { appointmentOwners, notifyAppointmentChanged, notifyAppointmentDeleted } from "../../notifications/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +70,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       await scheduleHourReminders();
     }
 
+    await notifyAppointmentChanged(current, updated);
     return json(updated);
   } catch (error) {
     console.error("Error updating appointment:", error);
@@ -82,6 +84,9 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     const order = await prisma.order.findUnique({ where: { id } });
     if (!order) return json({ error: "Order not found" }, 404);
 
+    // Read now: the Booking that may hold them is about to go
+    const owners = await appointmentOwners(order);
+
     // Its scheduled "in 1 hour" emails must not go out
     await resetHourReminder(order.bookingId);
 
@@ -92,6 +97,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
       ...(order.bookingId ? [prisma.booking.deleteMany({ where: { id: order.bookingId } })] : []),
     ]);
 
+    await notifyAppointmentDeleted(order, owners);
     return json({ message: "Appointment deleted" });
   } catch (error) {
     console.error("Error deleting order:", error);

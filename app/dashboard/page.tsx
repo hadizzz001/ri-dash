@@ -167,7 +167,8 @@ export default function ProductTable() {
  
 function EditProductForm({ product, usedCategories, onCancel, onSave }) {
   const [title, setTitle] = useState(product.title);
-  const [price, setPrice] = useState(product.price); 
+  const [price, setPrice] = useState(product.price);
+  const [description, setDescription] = useState(product.description || '');
 
   const [categories, setCategories] = useState([]);
   const [categoryId, setCategoryId] = useState(product.cat || "");
@@ -195,6 +196,7 @@ function EditProductForm({ product, usedCategories, onCancel, onSave }) {
       title, 
       price,
       cat:categoryId,
+      description,
     });
   };
 
@@ -233,6 +235,20 @@ function EditProductForm({ product, usedCategories, onCancel, onSave }) {
           <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="rd-input" required />
         </label>
       </div>
+
+      {/* Description */}
+      <label className="rd-field">
+        <span className="rd-label">Description <small>(optional)</small></span>
+        <textarea
+          rows={3}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="rd-input"
+        />
+        <span className="rd-hint">
+          Shown under the service name on the website&apos;s booking page. Leave empty to show none.
+        </span>
+      </label>
 
       {/* Actions */}
       <div className="rd-actions">

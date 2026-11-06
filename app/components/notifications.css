@@ -1,0 +1,570 @@
+/* The dashboard's bell (NotificationBell.tsx). Colours come from globals.css. */
+
+/* Under the floating menu button; beside it on small screens, and next to the
+   menu while it is open (.rd-main keeps that strip free) */
+.rd-bell {
+  position: fixed;
+  top: 60px;
+  left: 16px;
+  z-index: 1060;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--rd-border);
+  border-radius: 10px;
+  background: var(--rd-surface);
+  color: var(--rd-muted);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, left 0.3s cubic-bezier(0.4, 0, 0.2, 1), top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.rd-bell:hover,
+.rd-bell.is-open {
+  background: var(--rd-accent-soft);
+  color: var(--rd-accent);
+}
+@media (max-width: 991px) {
+  .rd-bell {
+    top: 16px;
+    left: 60px;
+  }
+}
+.rd-bell.is-menu {
+  top: 16px;
+  left: calc(var(--rd-side-w) + 16px);
+}
+.rd-bell__count {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.rd-notif-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1065;
+}
+.rd-notif {
+  position: fixed;
+  top: 16px;
+  left: 62px;
+  z-index: 1070;
+  display: flex;
+  flex-direction: column;
+  width: 410px;
+  max-width: calc(100vw - 78px);
+  max-height: calc(100vh - 32px);
+  border: 1px solid var(--rd-border);
+  border-radius: 14px;
+  background: var(--rd-surface);
+  color: var(--rd-text);
+  box-shadow: 0 24px 60px rgba(24, 24, 27, 0.2);
+  outline: none;
+  overflow: hidden;
+  animation: rd-notif-in 0.16s ease-out;
+}
+.rd-notif.is-menu {
+  left: calc(var(--rd-side-w) + 62px);
+  max-width: calc(100vw - var(--rd-side-w) - 78px);
+}
+@media (max-width: 991px) {
+  .rd-notif,
+  .rd-notif.is-menu {
+    top: 60px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+    max-height: calc(100vh - 72px);
+    max-height: calc(100dvh - 72px);
+  }
+}
+@keyframes rd-notif-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rd-notif,
+  .rd-ntoast,
+  .rd-bell.is-ringing,
+  .rd-ring .rd-notif__icon,
+  .rd-notif__row.is-ringing .rd-notif__icon {
+    animation: none !important;
+  }
+}
+
+.rd-notif__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding: 14px 16px 10px;
+}
+.rd-notif__head h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.rd-notif__pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--rd-accent-soft);
+  color: var(--rd-accent);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.rd-notif__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--rd-muted);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.rd-notif__link:hover:not(:disabled) {
+  background: #f4f4f5;
+  color: var(--rd-text);
+}
+.rd-notif__link:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.rd-notif__tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--rd-border);
+}
+.rd-notif__tabs button {
+  padding: 7px 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--rd-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.rd-notif__tabs button:hover {
+  color: var(--rd-text);
+}
+.rd-notif__tabs button.is-on {
+  border-bottom-color: var(--rd-accent);
+  color: var(--rd-accent);
+  font-weight: 600;
+}
+
+.rd-notif__scroll {
+  flex: 1;
+  min-height: 120px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.rd-notif__scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.rd-notif__scroll::-webkit-scrollbar-thumb {
+  border-radius: 6px;
+  background: #e4e4e7;
+}
+.rd-notif__scroll ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rd-notif__day {
+  margin: 0;
+  padding: 10px 16px 4px;
+  color: #a1a1aa;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rd-notif__row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 28px 10px 16px;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.rd-notif__row:hover {
+  background: #f7f7f8;
+}
+.rd-notif__row.is-unread {
+  background: #fbf6f4;
+}
+.rd-notif__row.is-unread:hover {
+  background: var(--rd-accent-soft);
+}
+.rd-notif__row.is-urgent.is-unread {
+  background: #fffbeb;
+}
+
+.rd-notif__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #f4f4f5;
+  color: #52525b;
+}
+.is-good > .rd-notif__icon,
+.is-good .rd-notif__icon {
+  background: #ecfdf3;
+  color: #15803d;
+}
+.is-urgent > .rd-notif__icon,
+.is-urgent .rd-notif__icon {
+  background: #fef3c7;
+  color: #b45309;
+}
+.is-danger > .rd-notif__icon,
+.is-danger .rd-notif__icon {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.rd-notif__text {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #52525b;
+  overflow-wrap: anywhere;
+}
+.rd-notif__text b {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--rd-text);
+}
+.is-unread .rd-notif__text b {
+  font-weight: 700;
+}
+.rd-notif__text small {
+  display: block;
+  margin-top: 3px;
+  color: #a1a1aa;
+  font-size: 12px;
+}
+.rd-notif__actor {
+  font-weight: 500;
+}
+.rd-notif__actor.is-client {
+  color: var(--rd-accent);
+}
+.rd-notif__dot {
+  position: absolute;
+  top: 16px;
+  right: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rd-accent);
+}
+
+.rd-notif__empty {
+  padding: 36px 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--rd-muted);
+}
+.rd-notif__empty b {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: var(--rd-text);
+}
+.rd-notif__empty p {
+  margin: 0;
+}
+a.rd-notif__signin {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 7px 14px;
+  border-radius: 9px;
+  background: var(--rd-text);
+  color: #fff !important;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.rd-notif__more {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 8px 16px 12px;
+  padding: 8px;
+  border: 1px solid var(--rd-border);
+  border-radius: 9px;
+  background: var(--rd-surface);
+  color: var(--rd-text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.rd-notif__more:hover:not(:disabled) {
+  background: #f4f4f5;
+}
+
+.rd-notif__foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 7px 10px;
+  border-top: 1px solid var(--rd-border);
+}
+.rd-notif__note {
+  margin: 0;
+  padding: 0 16px 10px;
+  color: #b45309;
+  font-size: 12.5px;
+}
+
+/* New while the dashboard is open. Bottom left on a computer, clear of the
+   toolbars and the appointment drawer; under the top buttons on small screens */
+.rd-ntoasts {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  z-index: 1300;
+  display: grid;
+  gap: 8px;
+  width: min(370px, calc(100vw - 32px));
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.rd-ntoasts.is-menu {
+  left: calc(var(--rd-side-w) + 16px);
+}
+@media (max-width: 991px) {
+  /* A long stack scrolls; the padding leaves room for the cards' shadows */
+  .rd-ntoasts,
+  .rd-ntoasts.is-menu {
+    top: 48px;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    width: auto;
+    padding: 12px 12px 24px;
+    max-height: calc(100vh - 48px);
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+    pointer-events: none;
+  }
+  .rd-ntoasts > * {
+    pointer-events: auto;
+  }
+  .rd-ntoasts .rd-ntoast {
+    box-shadow: 0 6px 18px rgba(24, 24, 27, 0.16);
+  }
+  .rd-ntoasts .rd-ring {
+    box-shadow: 0 0 0 3px var(--rd-accent-soft), 0 6px 18px rgba(24, 24, 27, 0.16);
+  }
+}
+.rd-ntoast {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 11px 8px 11px 12px;
+  border: 1px solid var(--rd-border);
+  border-radius: 12px;
+  background: var(--rd-surface);
+  color: var(--rd-text);
+  box-shadow: 0 18px 44px rgba(24, 24, 27, 0.18);
+  animation: rd-notif-in 0.18s ease-out;
+}
+.rd-ntoast.is-urgent {
+  border-color: #fcd34d;
+}
+.rd-ntoast__main {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  gap: 11px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.rd-ntoast .rd-notif__text b {
+  font-weight: 600;
+}
+.rd-ntoast__close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: #a1a1aa;
+  cursor: pointer;
+}
+.rd-ntoast__close:hover {
+  background: #f4f4f5;
+  color: var(--rd-text);
+}
+
+/* Ringing: an appointment nobody has opened yet. It stays until it is opened */
+.rd-bell.is-ringing,
+.rd-bell.is-ringing:hover {
+  background: var(--rd-accent);
+  color: #fff;
+  animation: rd-bell-shake 1.5s ease-in-out infinite;
+}
+.rd-ring {
+  border-color: var(--rd-accent);
+  box-shadow: 0 0 0 3px var(--rd-accent-soft), 0 18px 44px rgba(24, 24, 27, 0.18);
+}
+.rd-ring .rd-notif__icon,
+.rd-notif__row.is-ringing .rd-notif__icon {
+  background: var(--rd-accent);
+  color: #fff;
+  animation: rd-bell-shake 1.5s ease-in-out infinite;
+}
+.rd-ring__open {
+  flex: none;
+  align-self: center;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: var(--rd-accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+/* Two classes: Tailwind's reset takes the background off a button with just one */
+.rd-ntoasts .rd-ring__more {
+  padding: 7px 12px;
+  border: 1px solid var(--rd-accent);
+  border-radius: 10px;
+  background: var(--rd-surface);
+  color: var(--rd-accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+@keyframes rd-bell-shake {
+  0%,
+  45%,
+  100% {
+    transform: rotate(0);
+  }
+  9%,
+  27% {
+    transform: rotate(-13deg);
+  }
+  18%,
+  36% {
+    transform: rotate(13deg);
+  }
+}
+
+/* "Click anywhere": it waits a moment, as most pages get their sound right away */
+.rd-hint {
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  color: var(--rd-muted);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.rd-hint svg {
+  flex: none;
+}
+.rd-ntoast--late {
+  animation: rd-notif-late 0.2s ease-out 1s both;
+}
+@keyframes rd-notif-late {
+  from {
+    opacity: 0;
+    visibility: hidden;
+  }
+  to {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* Asking to allow the browser's notifications */
+.rd-ask {
+  gap: 11px;
+  padding: 12px;
+  border-color: #fcd34d;
+}
+.rd-ask .rd-notif__icon {
+  background: #fef3c7;
+  color: #b45309;
+}
+.rd-ask__steps {
+  margin: 7px 0 0;
+  padding-left: 18px;
+  list-style: decimal;
+}
+.rd-ask__steps li {
+  margin-top: 4px;
+}
+.rd-ask__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 9px;
+}
+.rd-ask .rd-ask__go {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--rd-text);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.rd-ask .rd-ask__go:hover {
+  background: #000;
+}

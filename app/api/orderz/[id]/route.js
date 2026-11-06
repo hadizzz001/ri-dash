@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { notifyShopOrderChanged } from '../../notifications/notify';
 
 const prisma = new PrismaClient();
 
@@ -32,10 +33,13 @@ export async function PATCH(request, { params }) {
   const body = await request.json(); // Parse the JSON body
 
   try {
+    const before = await prisma.order1.findUnique({ where: { id } });
     const updatedOrder = await prisma.order1.update({
       where: { id },
       data: body, // Pass dynamic fields (e.g., { paid: true } or { fulfillment: true })
     });
+
+    if (before) await notifyShopOrderChanged(before, updatedOrder);
 
     return new Response(JSON.stringify(updatedOrder), { status: 200 });
   } catch (error) {

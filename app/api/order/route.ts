@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { buildUpdate, findClash, timeZoneOfCountry } from "./appointmentData";
 import { scheduleHourReminders } from "./hourReminder";
 import { TOO_SOON_ERROR, bookingCutoff, isTooSoon, makeReference, newObjectId } from "../../utils/appointments";
+import { notifyAppointmentCreated } from "../notifications/notify";
 
 export async function main() {
     try {
@@ -103,6 +104,7 @@ export const POST = async (req: Request) => {
         });
 
         await scheduleHourReminders();
+        await notifyAppointmentCreated(created);
         return NextResponse.json(created, { status: 201 });
     } catch (err) {
         console.error("Error creating appointment:", err);

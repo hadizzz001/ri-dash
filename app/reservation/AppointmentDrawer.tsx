@@ -43,6 +43,7 @@ export type Draft = {
   cancelledAt?: string | null;
   lang?: string | null;
   clientCountry?: string | null;
+  shortNotice?: boolean;
 };
 
 const money = (n: any) => `$${(Number(n) || 0).toFixed(2)}`;
@@ -247,7 +248,7 @@ export default function AppointmentDrawer({
       .filter((o) => o.date === d.date && o.id !== d.id && o.status !== "cancelled")
       .map((o) => o.hour)
   );
-  // A new appointment can't be in the next 3 hours (same rule as the API)
+  // A new appointment can't be in the next 30 minutes (same rule as the API)
   const cutoff = bookingCutoff(timeZones[d.country] || DEFAULT_TIME_ZONE);
   const tooSoon = (h: string) => isNew && !!d.date && isTooSoon(d.date, h, cutoff);
   const hourTooSoon = !!d.hour && tooSoon(d.hour);
@@ -308,6 +309,11 @@ export default function AppointmentDrawer({
             <div className="fz-alert">
               Cancelled{d.cancelledBy === "client" ? " by the client" : d.cancelledBy === "salon" ? " by the salon" : ""} on{" "}
               {new Date(d.cancelledAt).toLocaleString()} — the time is free again on the website.
+            </div>
+          )}
+          {d.shortNotice && d.status === "pending" && (
+            <div className="fz-alert fz-alert--wait">
+              Short-notice booking: the client was asked to continue on WhatsApp. Set the status to Confirmed once that&apos;s done.
             </div>
           )}
           {d.paid && <div className="fz-alert fz-alert--info">Paid ✓</div>}

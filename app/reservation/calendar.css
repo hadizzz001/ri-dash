@@ -472,6 +472,9 @@
 .fz-tag--paid {
   background: #059669;
 }
+.fz-tag--wait {
+  background: #b45309;
+}
 
 /* ------------------------------------------------------------ list view */
 .fz-list {
@@ -822,6 +825,10 @@
 .fz-alert--info {
   background: #eff6ff;
   color: #1d4ed8;
+}
+.fz-alert--wait {
+  background: #fffbeb;
+  color: #92400e;
 }
 .fz-menu {
   position: relative;
