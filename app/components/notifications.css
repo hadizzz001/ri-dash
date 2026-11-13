@@ -504,8 +504,9 @@ a.rd-notif__signin {
   }
 }
 
-/* "Click anywhere": it waits a moment, as most pages get their sound right away */
-.rd-hint {
+/* "Click anywhere": it waits a moment, as most pages get their sound right away.
+   Scoped to the toast: .rd-hint is also the dashboard's plain hint text (globals.css). */
+.rd-ntoast.rd-hint {
   align-items: center;
   gap: 9px;
   padding: 9px 12px;
@@ -513,7 +514,7 @@ a.rd-notif__signin {
   font-size: 12.5px;
   line-height: 1.4;
 }
-.rd-hint svg {
+.rd-ntoast.rd-hint svg {
   flex: none;
 }
 .rd-ntoast--late {

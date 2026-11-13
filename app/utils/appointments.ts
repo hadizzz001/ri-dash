@@ -2,7 +2,9 @@
  * Appointment rules shared by the dashboard calendar and its API, kept in line
  * with the website (my-app/app/lib/bookingPrice.js & bookingOptions.js):
  *
- *  - Prices stored on a booking are already at the location rate.
+ *  - Prices stored on a booking are already at the location rate: outside
+ *    Lebanon a service costs its price × the multiplier set on the
+ *    "Prices & Tax" page (Tax.outsideFactor, 4 until one is saved).
  *  - Home service doubles the services inside Lebanon.
  *  - Tax applies only once a city outside Beirut is set.
  *  - Bookings outside Lebanon are confirmed with a 25% deposit.
@@ -15,6 +17,21 @@
 export const LEBANON = "Lebanon";
 export const TAX_FREE_CITY = "Beirut";
 export const DEPOSIT_RATE = 0.25;
+
+/** The outside-Lebanon multiplier before one is saved (the old fixed ×4), and the highest allowed. */
+export const DEFAULT_OUTSIDE_FACTOR = 4;
+export const MAX_OUTSIDE_FACTOR = 20;
+
+/** A saved outside-Lebanon multiplier, or the default when it is missing or invalid. */
+export const outsideFactorOf = (value: unknown) => {
+  const n = Number(value);
+  return value !== null && value !== "" && Number.isFinite(n) && n >= 1 && n <= MAX_OUTSIDE_FACTOR
+    ? n
+    : DEFAULT_OUTSIDE_FACTOR;
+};
+
+/** "×4", "×2.5" */
+export const factorLabel = (factor: number) => `×${Math.round(factor * 100) / 100}`;
 
 export const STAFF = [
   { id: "hijab", name: "Hijab", color: "#a5b4fc" },

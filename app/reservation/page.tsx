@@ -16,6 +16,7 @@ import "./calendar.css";
 import AppointmentDrawer, { Draft, Service, statusOf } from "./AppointmentDrawer";
 import { sendEmail } from "../api/sendEmail/sendEmail";
 import {
+  DEFAULT_OUTSIDE_FACTOR,
   DEFAULT_TIME_ZONE,
   LEBANON,
   OPEN_FROM,
@@ -29,6 +30,7 @@ import {
   defaultTaxPercent,
   discountPercentOf,
   isTooSoon,
+  outsideFactorOf,
 } from "../utils/appointments";
 
 /* ------------------------------------------------------------- helpers */
@@ -171,6 +173,7 @@ export default function AppointmentsCalendar() {
   const [loading, setLoading] = useState(true);
   const [services, setServices] = useState<Service[]>([]);
   const [globalTax, setGlobalTax] = useState(0);
+  const [outsideFactor, setOutsideFactor] = useState(DEFAULT_OUTSIDE_FACTOR); // set on Prices & Tax
   const [countries, setCountries] = useState<string[] | undefined>(undefined);
   const [timeZones, setTimeZones] = useState<Record<string, string>>({});
 
@@ -220,9 +223,12 @@ export default function AppointmentsCalendar() {
       .then((r) => r.json())
       .then((j) => setServices(Array.isArray(j) ? j : []))
       .catch(() => setServices([]));
-    fetch("/api/tax")
+    fetch("/api/tax", { cache: "no-store" })
       .then((r) => r.json())
-      .then((j) => setGlobalTax(Number(j?.percent) || 0))
+      .then((j) => {
+        setGlobalTax(Number(j?.percent) || 0);
+        setOutsideFactor(outsideFactorOf(j?.outsideFactor));
+      })
       .catch(() => setGlobalTax(0));
     fetch("/api/booking-settings")
       .then((r) => r.json())
@@ -1053,6 +1059,7 @@ export default function AppointmentsCalendar() {
           countries={countries}
           timeZones={timeZones}
           globalTax={globalTax}
+          outsideFactor={outsideFactor}
           saving={saving}
           error={drawerError}
           onClose={() => setDrawer(null)}

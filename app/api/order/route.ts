@@ -2,7 +2,14 @@ import prisma from "../../../prisma";
 import { NextResponse } from "next/server";
 import { buildUpdate, findClash, timeZoneOfCountry } from "./appointmentData";
 import { scheduleHourReminders } from "./hourReminder";
-import { TOO_SOON_ERROR, bookingCutoff, isTooSoon, makeReference, newObjectId } from "../../utils/appointments";
+import {
+    TOO_SOON_ERROR,
+    bookingCutoff,
+    isTooSoon,
+    makeReference,
+    newObjectId,
+    outsideFactorOf,
+} from "../../utils/appointments";
 import { notifyAppointmentCreated } from "../notifications/notify";
 
 export async function main() {
@@ -73,6 +80,9 @@ export const POST = async (req: Request) => {
 
         const reference = makeReference();
         const bookingId = newObjectId();
+        // The outside-Lebanon multiplier in force: the website's emails name it
+        // in their note on prices (my-app/app/lib/bookingMessage.js)
+        const outsideFactor = outsideFactorOf((await prisma.tax.findFirst())?.outsideFactor);
         const lang = ["ar", "fr"].includes(body.lang) ? body.lang : "en";
         const now = new Date().toISOString();
 
@@ -87,6 +97,7 @@ export const POST = async (req: Request) => {
                     lang,
                     paid: !!body.paid,
                     remindersSent: [],
+                    outsideFactor,
                     source: "dashboard",
                     createdAt: { $date: now },
                 },

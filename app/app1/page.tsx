@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
+import { DEFAULT_OUTSIDE_FACTOR, factorLabel, outsideFactorOf } from '../utils/appointments';
 import {
   BookingSettings,
   Country,
@@ -447,6 +448,7 @@ export default function BookingSchedulePage() {
   const [msg, setMsg] = useState<{ text: string; error?: boolean } | null>(null);
   const [newDate, setNewDate] = useState('');
   const [orders, setOrders] = useState<any[] | null>(null);
+  const [outsideFactor, setOutsideFactor] = useState(DEFAULT_OUTSIDE_FACTOR); // set on Prices & Tax
 
   const load = (data: any) => {
     const n = normalizeSettings(data);
@@ -463,6 +465,10 @@ export default function BookingSchedulePage() {
       .then((r) => r.json())
       .then((d) => setOrders(Array.isArray(d) ? d : []))
       .catch(() => setOrders([]));
+    fetch('/api/tax', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((t) => setOutsideFactor(outsideFactorOf(t?.outsideFactor)))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -622,7 +628,8 @@ export default function BookingSchedulePage() {
       </div>
       <p className="rd-hint" style={{ marginBottom: 12 }}>
         Clients pick one of these as the appointment country. Prices: Lebanon uses the normal rate, every other country
-        the travelling rate (×4) with a 25% deposit.
+        the travelling rate ({factorLabel(outsideFactor)}, change it on <a href="/tax">Prices &amp; Tax</a>) with a 25%
+        deposit.
       </p>
 
       {s.countries.map((c, i) => (

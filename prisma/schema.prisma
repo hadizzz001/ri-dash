@@ -112,11 +112,14 @@ model Booking {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 }
 
-// Appointment tax: a single percentage, added to every booking total
-// (salon and home service alike). Set from the dashboard's Tax page.
+// Appointment prices, one document set from the dashboard's "Prices & Tax"
+// page (/tax): the tax percentage, added to home-service totals outside
+// Beirut, and the outside-Lebanon multiplier — every service booked in another
+// country costs its price × outsideFactor (missing = 4, the old fixed rate).
 model Tax {
-  id      String @id @default(auto()) @map("_id") @db.ObjectId
-  percent Float  @default(0)
+  id            String @id @default(auto()) @map("_id") @db.ObjectId
+  percent       Float  @default(0)
+  outsideFactor Float?
 }
 
 

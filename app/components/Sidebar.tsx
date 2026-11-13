@@ -51,7 +51,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { href: "/reservation", label: "Calendar", icon: CalendarDays },
       { href: "/app1", label: "Booking Schedule", icon: Clock },
       { href: "/reservation", label: "View Appointments", icon: ListChecks },
-      { href: "/tax", label: "Appointment Tax", icon: Percent },
+      { href: "/tax", label: "Prices & Tax", icon: Percent },
     ],
   },
   {

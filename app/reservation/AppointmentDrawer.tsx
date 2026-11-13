@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   COUNTRIES,
+  DEFAULT_OUTSIDE_FACTOR,
   DEFAULT_TIME_ZONE,
   LEBANON,
   OPEN_HOURS,
@@ -13,6 +14,7 @@ import {
   bookingCutoff,
   computeTotals,
   defaultTaxPercent,
+  factorLabel,
   isTooSoon,
 } from "../utils/appointments";
 import { buildUpdateMessage, messageLang, whatsappLink } from "../utils/appointmentMessage";
@@ -69,6 +71,8 @@ type Props = {
   countries?: string[];
   timeZones?: Record<string, string>;
   globalTax: number;
+  /** Outside-Lebanon price multiplier from the Prices & Tax page */
+  outsideFactor?: number;
   saving: boolean;
   error: string;
   onClose: () => void;
@@ -90,6 +94,7 @@ export default function AppointmentDrawer({
   countries = COUNTRIES,
   timeZones = {},
   globalTax,
+  outsideFactor = DEFAULT_OUTSIDE_FACTOR,
   saving,
   error,
   onClose,
@@ -203,7 +208,7 @@ export default function AppointmentDrawer({
   });
   const minutes = cart.reduce((a, c) => a + (Number(c.duration) || 0) * c.qty, 0);
   const st = statusOf(d.status);
-  const rate = d.country && d.country !== LEBANON ? 4 : 1;
+  const rate = d.country && d.country !== LEBANON ? outsideFactor : 1;
 
   const grouped = useMemo(() => {
     const q = svcQuery.trim().toLowerCase();
@@ -516,7 +521,7 @@ export default function AppointmentDrawer({
             </div>
             {rate > 1 && (
               <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>
-                Services added outside Lebanon use the travelling rate (×4).
+                Services added outside Lebanon use the travelling rate ({factorLabel(rate)}, set on Prices &amp; Tax).
               </p>
             )}
           </section>
