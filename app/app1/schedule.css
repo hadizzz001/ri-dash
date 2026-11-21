@@ -98,6 +98,16 @@
 }
 .sch-cal__legend i.is-dot { width: 4px; height: 4px; margin: 0 8px 2px 3px; border-radius: 50%; background: var(--rd-text); }
 
+/* the locked-days calendar: red all day, light red when only some hours are locked */
+.sch-cal--lock .sch-cal__day.is-on { background: #d92d20; color: #fff; }
+.sch-cal--lock .sch-cal__day.is-on:hover:not(:disabled) { background: #b42318; }
+.sch-cal--lock .sch-cal__day.is-on.is-part { background: #fee4e2; color: #b42318; }
+.sch-cal--lock .sch-cal__day.is-on.is-part:hover:not(:disabled) { background: #fecdca; }
+.sch-cal--lock .sch-cal__day:focus-visible { box-shadow: 0 0 0 2px rgba(217, 45, 32, 0.4); }
+.sch-cal--lock .sch-cal__legend i { background: #d92d20; }
+.sch-cal--lock .sch-cal__legend i.is-part { background: #fee4e2; box-shadow: inset 0 0 0 1px #fda29b; }
+.sch-cal--lock .sch-cal__legend i.is-dot { background: var(--rd-text); }
+
 /* ------------------------------------------------------- hours & dates */
 .sch-hours { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .sch-hours .rd-input { width: auto; min-width: 96px; }
@@ -128,6 +138,44 @@
 .sch-datelist li > .rd-btn { margin-left: auto; }
 
 .sch-cities { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.6; }
+
+/* ------------------------------------------------ locked dates & hours */
+.sch-lock { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--rd-border); }
+.sch-lock > .rd-hint { margin-bottom: 4px; }
+/* beats `.rd-main .rd-label { display: block }`, which put the icon on its own line */
+.sch-lock .rd-label.sch-lock__title { display: inline-flex; align-items: center; gap: 7px; }
+.sch-lock__title svg { color: #b42318; }
+
+/* rows are taller than the open dates' ones; the right padding keeps each ✕
+   clear of the scrollbar a Mac lays over the list's edge while it scrolls */
+.sch-locklist { max-height: 440px; padding-right: 16px; }
+/* date | how it is locked (+ its hours, a warning) | unlock */
+.sch-locklist li {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px 14px;
+}
+.sch-locklist .sch-datelist__date { min-width: 0; padding-top: 7px; }
+.sch-locklist li > .rd-btn { margin-left: 0; }
+.sch-lock__body { display: grid; justify-items: start; gap: 8px; min-width: 0; }
+.sch-lock__body > select.rd-input { width: auto; }
+.sch-lock__ranges { display: grid; justify-items: start; gap: 6px; }
+.sch-lock__range { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.sch-warn {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #b54708;
+}
+.sch-warn svg { flex: none; margin-top: 1px; }
+@media (max-width: 560px) {
+  /* phones: the date and its unlock button on top, the hours below */
+  .sch-locklist li { grid-template-columns: minmax(0, 1fr) auto; }
+  .sch-locklist .sch-lock__body { grid-column: 1 / -1; grid-row: 2; }
+}
 
 /* ------------------------------------------------------- weekly / dates */
 .sch-day { width: 150px; font-weight: 500; }

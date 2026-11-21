@@ -11,6 +11,9 @@
  *      "weekly" — the weekly hours and specific dates below;
  *      "dates"  — only the dates of its own calendar (`dates`), e.g. the
  *                 days the team travels to KSA.
+ *    and its locked dates & hours (`unavailable`): times the team isn't
+ *    available there, { date, from, until } (all day = 00:00 to 24:00, a
+ *    date can have several). The website hides them in either mode.
  *  - weekly:    7 entries, Sunday first (JS getDay()), { open, from, until }.
  *  - overrides: specific dates { date, closed, from, until, note } that
  *    replace the weekly hours of that day (a holiday, a late opening…).
@@ -21,6 +24,8 @@
 export type City = [string, string];
 export type CountryDate = { date: string; from: string; until: string };
 export type CountryMode = "weekly" | "dates";
+/** Hours of a date the team isn't available in a country (all day = 00:00 to 24:00). */
+export type LockedTime = { date: string; from: string; until: string };
 export type Country = {
   name: string;
   ar: string;
@@ -29,6 +34,7 @@ export type Country = {
   locked: boolean;
   mode: CountryMode;
   dates: CountryDate[];
+  unavailable: LockedTime[];
 };
 export type DayHours = { open: boolean; from: string; until: string };
 export type Override = { date: string; closed: boolean; from: string; until: string; note?: string };
@@ -149,7 +155,12 @@ const LEBANON_CITIES: City[] = [
 ];
 
 /** Open for booking on the weekly hours (a new or default country). */
-export const bookable = () => ({ locked: false, mode: "weekly" as CountryMode, dates: [] as CountryDate[] });
+export const bookable = () => ({
+  locked: false,
+  mode: "weekly" as CountryMode,
+  dates: [] as CountryDate[],
+  unavailable: [] as LockedTime[],
+});
 
 export const DEFAULT_COUNTRIES: Country[] = [
   { name: "Lebanon", ar: "لبنان", timeZone: "Asia/Beirut", cities: LEBANON_CITIES, ...bookable() },
@@ -183,6 +194,25 @@ export function normalizeDates(list: any): CountryDate[] {
   return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
 
+export const ALL_DAY = { from: "00:00", until: "24:00" };
+export const isAllDay = (t: { from: string; until: string }) => t.from === ALL_DAY.from && t.until === ALL_DAY.until;
+
+/** A country's locked dates & hours, by date then start; a missing time means the whole day. */
+export function normalizeUnavailable(list: any): LockedTime[] {
+  const byKey = new Map<string, LockedTime>();
+  (Array.isArray(list) ? list : [])
+    .filter((t: any) => isIso(t?.date))
+    .forEach((t: any) => {
+      const lock = {
+        date: t.date,
+        from: isTime(t.from) ? t.from : ALL_DAY.from,
+        until: isTime(t.until) ? t.until : ALL_DAY.until,
+      };
+      byKey.set(`${lock.date} ${lock.from} ${lock.until}`, lock);
+    });
+  return Array.from(byKey.values()).sort((a, b) => a.date.localeCompare(b.date) || a.from.localeCompare(b.from));
+}
+
 /** Cleans what the page sends / what is stored; anything missing falls back to the defaults. */
 export function normalizeSettings(raw: any): BookingSettings {
   const countries: Country[] = Array.isArray(raw?.countries)
@@ -199,6 +229,7 @@ export function normalizeSettings(raw: any): BookingSettings {
           locked: c?.locked === true,
           mode: (c?.mode === "dates" ? "dates" : "weekly") as CountryMode,
           dates: normalizeDates(c?.dates),
+          unavailable: normalizeUnavailable(c?.unavailable),
         }))
         .filter((c: Country) => c.name && c.cities.length)
     : [];
@@ -237,14 +268,12 @@ export function slotsBetween(from: string, until: string): string[] {
   return out;
 }
 
-/**
- * The open start times of a date ("YYYY-MM-DD") under these settings, in an
- * appointment country when one is given: none if it is locked, its own
- * calendar's hours if it has one, otherwise the specific date or weekday.
- */
-export function hoursFor(settings: BookingSettings, iso: string, country?: string): string[] {
-  const c = country ? settings.countries.find((x) => x.name === country) : undefined;
-  if (c?.locked) return [];
+/** Does the 30-minute start time `hour` fall in one of these locked hours? */
+export const isLockedAt = (locks: { from: string; until: string }[], hour: string) =>
+  locks.some((t) => toMin(hour) < toMin(t.until) && toMin(hour) + SLOT_MINUTES > toMin(t.from));
+
+/** Start times of a date before the country's locked hours: its own calendar, else the specific date or weekday. */
+function openHours(settings: BookingSettings, iso: string, c?: Country): string[] {
   if (c?.mode === "dates") {
     const own = c.dates.find((x) => x.date === iso);
     return own ? slotsBetween(own.from, own.until) : [];
@@ -254,4 +283,18 @@ export function hoursFor(settings: BookingSettings, iso: string, country?: strin
   const [y, m, d] = iso.split("-").map(Number);
   const day = settings.weekly[new Date(y, m - 1, d).getDay()];
   return day?.open ? slotsBetween(day.from, day.until) : [];
+}
+
+/**
+ * The open start times of a date ("YYYY-MM-DD") under these settings, in an
+ * appointment country when one is given: none if it is locked, its own
+ * calendar's hours if it has one, otherwise the specific date or weekday,
+ * minus the country's locked dates & hours.
+ */
+export function hoursFor(settings: BookingSettings, iso: string, country?: string): string[] {
+  const c = country ? settings.countries.find((x) => x.name === country) : undefined;
+  if (c?.locked) return [];
+  const open = openHours(settings, iso, c);
+  const locks = (c?.unavailable || []).filter((t) => t.date === iso);
+  return locks.length ? open.filter((h) => !isLockedAt(locks, h)) : open;
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertTriangle,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
@@ -16,15 +17,19 @@ import {
 import PageHeader from '../components/PageHeader';
 import { DEFAULT_OUTSIDE_FACTOR, factorLabel, outsideFactorOf } from '../utils/appointments';
 import {
+  ALL_DAY,
   BookingSettings,
   Country,
   CountryDate,
   DEFAULT_COUNTRIES,
   DEFAULT_WEEKLY,
+  LockedTime,
   TIME_ZONES,
   WEEKDAYS,
   bookable,
   hoursFor,
+  isAllDay,
+  isLockedAt,
   normalizeSettings,
 } from '../utils/bookingSchedule';
 import './schedule.css';
@@ -35,6 +40,8 @@ import './schedule.css';
  *    it isn't available right now and gives the salon's phone / WhatsApp),
  *    and either opens on every open day of the weekly hours or only on the
  *    dates picked in its own calendar (e.g. the days the team is in KSA).
+ *    Each one also has its locked dates & hours: days, all day or some
+ *    hours, when the team isn't available there. The website hides them.
  *  - Weekly days & hours (every day 08:00–24:00 by default).
  *  - Specific dates: close a date or give it its own hours.
  * Saved in one go with "Save changes".
@@ -42,6 +49,9 @@ import './schedule.css';
 
 /** The salon's phone, as the website shows it for a locked country */
 const SALON_PHONE = '+961 3 896 074';
+
+/** A country without upcoming appointments (one object, so its calendars don't rebuild each render) */
+const NO_BOOKINGS: Record<string, string[]> = {};
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const toIso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -65,8 +75,17 @@ const textToCities = (text: string): [string, string][] =>
     .filter((p) => p[0])
     .map((p) => [p[0], p[1] || '']);
 
-/** A country being edited: cities as text, a stable key, the hours given to newly picked dates. */
-type Draft = Country & { uid: string; citiesText: string; fresh?: boolean; newHours: { from: string; until: string } };
+/**
+ * A country being edited: cities as text, a stable key, the hours given to
+ * newly picked dates and how newly locked days are locked.
+ */
+type Draft = Country & {
+  uid: string;
+  citiesText: string;
+  fresh?: boolean;
+  newHours: { from: string; until: string };
+  newLock: { allDay: boolean; from: string; until: string };
+};
 type Schedule = Omit<BookingSettings, 'countries'> & { countries: Draft[] };
 
 let uidSeq = 0;
@@ -79,7 +98,21 @@ const toDraft = (c: Country, fresh = false): Draft => {
     citiesText: citiesToText(c),
     fresh,
     newHours: next ? { from: next.from, until: next.until } : { from: '08:00', until: '24:00' },
+    newLock: { allDay: true, from: '08:00', until: '12:00' },
   };
+};
+
+/** Sorts by date only, so the hours of one day keep the order they are edited in. */
+const sortByDate = <T extends { date: string }>(list: T[]) => list.sort((a, b) => a.date.localeCompare(b.date));
+
+/** Each date in a list of locked hours, with its hours. */
+const groupByDate = (list: LockedTime[]) => {
+  const out = new Map<string, LockedTime[]>();
+  list.forEach((t) => {
+    if (!out.has(t.date)) out.set(t.date, []);
+    out.get(t.date)!.push(t);
+  });
+  return out;
 };
 
 /* ------------------------------------------------------------ pieces */
@@ -96,39 +129,49 @@ function TimeSelect({ value, onChange, label }: { value: string; onChange: (v: s
   );
 }
 
-/** Opening – closing time, with a warning while they are in the wrong order. */
+/** Opening – closing time (or the start – end of locked hours), with a warning while they are in the wrong order. */
 function HoursPicker({
   from,
   until,
   onChange,
+  labels = ['Opens at', 'Closes at'],
+  bad = 'Closing must be after opening',
 }: {
   from: string;
   until: string;
   onChange: (patch: { from?: string; until?: string }) => void;
+  labels?: [string, string];
+  bad?: string;
 }) {
   return (
     <span className="sch-hours">
-      <TimeSelect value={from} onChange={(v) => onChange({ from: v })} label="Opens at" />
+      <TimeSelect value={from} onChange={(v) => onChange({ from: v })} label={labels[0]} />
       <span className="rd-muted">to</span>
-      <TimeSelect value={until} onChange={(v) => onChange({ until: v })} label="Closes at" />
-      {from >= until && <span className="sch-bad">Closing must be after opening</span>}
+      <TimeSelect value={until} onChange={(v) => onChange({ until: v })} label={labels[1]} />
+      {from >= until && <span className="sch-bad">{bad}</span>}
     </span>
   );
 }
 
 /**
- * A month to pick a country's booking dates: click a day to add or remove
- * it, Shift-click another day to add every day in between. Days that already
+ * A month to pick a country's days: click a day to add or remove it,
+ * Shift-click another day to add every day in between. Days that already
  * have appointments in this country get a dot.
+ *  - tone "open": its booking dates;
+ *  - tone "lock": its locked days, in red, lighter when only some hours are locked (`partial`).
  */
 function DatesCalendar({
   picked,
+  partial,
   marked,
+  tone = 'open',
   onToggle,
   onAddRange,
 }: {
   picked: Set<string>;
+  partial?: Set<string>;
   marked: Set<string>;
+  tone?: 'open' | 'lock';
   onToggle: (iso: string) => void;
   onAddRange: (a: string, b: string) => void;
 }) {
@@ -147,9 +190,17 @@ function DatesCalendar({
     ...Array.from({ length: days }, (_, i) => `${month}-${pad(i + 1)}`),
   ];
   const shift = (n: number) => setMonth(toIso(new Date(first.getFullYear(), first.getMonth() + n, 1)).slice(0, 7));
+  const state = (iso: string) =>
+    !picked.has(iso)
+      ? ''
+      : tone === 'open'
+        ? ' (open)'
+        : partial?.has(iso)
+          ? ' (some hours locked)'
+          : ' (locked all day)';
 
   return (
-    <div className="sch-cal">
+    <div className={`sch-cal ${tone === 'lock' ? 'sch-cal--lock' : ''}`}>
       <div className="sch-cal__head">
         <button
           type="button"
@@ -181,12 +232,13 @@ function DatesCalendar({
               className={[
                 'sch-cal__day',
                 picked.has(iso) ? 'is-on' : '',
+                picked.has(iso) && partial?.has(iso) ? 'is-part' : '',
                 iso === today ? 'is-today' : '',
                 marked.has(iso) ? 'has-dot' : '',
               ].join(' ')}
               disabled={iso < today}
               aria-pressed={picked.has(iso)}
-              aria-label={`${longDate(iso)}${picked.has(iso) ? ' (open)' : ''}`}
+              aria-label={`${longDate(iso)}${state(iso)}${marked.has(iso) ? ', has appointments' : ''}`}
               onClick={(e) => {
                 if (e.shiftKey && lastClicked.current && lastClicked.current !== iso) onAddRange(lastClicked.current, iso);
                 else onToggle(iso);
@@ -199,10 +251,23 @@ function DatesCalendar({
         )}
       </div>
       <div className="sch-cal__legend">
-        <span>
-          <i />
-          Open for booking
-        </span>
+        {tone === 'open' ? (
+          <span>
+            <i />
+            Open for booking
+          </span>
+        ) : (
+          <>
+            <span>
+              <i />
+              Locked all day
+            </span>
+            <span>
+              <i className="is-part" />
+              Some hours locked
+            </span>
+          </>
+        )}
         {marked.size > 0 && (
           <span>
             <i className="is-dot" />
@@ -214,29 +279,243 @@ function DatesCalendar({
   );
 }
 
-/** One appointment country: lock, booking days (weekly or its own dates), name / cities. */
+/**
+ * A country's locked dates & hours: the days, all day or some hours, when the
+ * team isn't available there. The website doesn't offer those times (in both
+ * booking modes) and /api/booking refuses them. Appointments already booked
+ * then stay booked, so they are pointed out.
+ */
+function LockedTimes({
+  c,
+  booked,
+  onChange,
+}: {
+  c: Draft;
+  booked: Record<string, string[]>; // this country's upcoming appointments: date → start times
+  onChange: (patch: Partial<Draft>) => void;
+}) {
+  const today = todayISO();
+  const label = c.name.trim() || 'this country';
+  const locks = useMemo(() => groupByDate(c.unavailable), [c.unavailable]);
+  const picked = useMemo(() => new Set(Array.from(locks.keys())), [locks]);
+  const partial = useMemo(
+    () => new Set(Array.from(locks.entries()).filter(([, l]) => !l.some(isAllDay)).map(([d]) => d)),
+    [locks]
+  );
+  const marked = useMemo(() => new Set(Object.keys(booked)), [booked]);
+  const days = Array.from(locks.keys()).filter((d) => d >= today);
+
+  /** The hours a newly locked day gets: the whole day or the "Some hours" below. */
+  const newHours = () => (c.newLock.allDay ? { ...ALL_DAY } : { from: c.newLock.from, until: c.newLock.until });
+  const withLocks = (list: LockedTime[]) => onChange({ unavailable: sortByDate(list) });
+  /** Replaces the locked hours of one day. */
+  const setDay = (iso: string, hours: { from: string; until: string }[]) =>
+    withLocks([...c.unavailable.filter((t) => t.date !== iso), ...hours.map((h) => ({ date: iso, ...h }))]);
+  const add = (isos: string[]) => {
+    const extra = isos.filter((iso) => iso >= today && !picked.has(iso)).map((iso) => ({ date: iso, ...newHours() }));
+    if (extra.length) withLocks([...c.unavailable, ...extra]);
+  };
+  const unlock = (iso: string) => withLocks(c.unavailable.filter((t) => t.date !== iso));
+  const toggle = (iso: string) => (picked.has(iso) ? unlock(iso) : add([iso]));
+  const addRange = (a: string, b: string) => {
+    const [from, to] = a < b ? [a, b] : [b, a];
+    const list: string[] = [];
+    for (const d = fromIso(from); toIso(d) <= to; d.setDate(d.getDate() + 1)) list.push(toIso(d));
+    add(list);
+  };
+  /** Another stretch of locked hours on a day, starting when the last one ends. */
+  const addHours = (iso: string) => {
+    const list = locks.get(iso) || [];
+    const last = list[list.length - 1];
+    const from = last && last.until < '24:00' ? last.until : '08:00';
+    setDay(iso, [...list, { from, until: TIMES[Math.min(Math.max(0, TIMES.indexOf(from)) + 2, TIMES.length - 1)] }]);
+  };
+
+  return (
+    <div className="sch-lock">
+      <div className="sch-row">
+        <span className="rd-label sch-lock__title">
+          <Lock size={15} strokeWidth={2} /> Locked dates &amp; hours
+        </span>
+        {days.length > 0 ? (
+          <span className="rd-badge rd-badge--danger">
+            {days.length} locked day{days.length === 1 ? '' : 's'}
+          </span>
+        ) : (
+          <span className="rd-badge">Nothing locked</span>
+        )}
+      </div>
+      <p className="rd-hint">
+        Choose the days and hours you aren’t available in {label}. The website doesn’t show them, so clients can’t book
+        them. Hours are {label}’s local time ({c.timeZone}).
+      </p>
+      <div className="sch-dates">
+        <DatesCalendar
+          tone="lock"
+          picked={picked}
+          partial={partial}
+          marked={marked}
+          onToggle={toggle}
+          onAddRange={addRange}
+        />
+        <div>
+          <div className="sch-new">
+            <span className="rd-label">Lock new days</span>
+            <div className="rd-seg" role="group" aria-label={`How new days are locked in ${label}`}>
+              <button
+                type="button"
+                className={c.newLock.allDay ? 'is-on' : ''}
+                aria-pressed={c.newLock.allDay}
+                onClick={() => onChange({ newLock: { ...c.newLock, allDay: true } })}
+              >
+                All day
+              </button>
+              <button
+                type="button"
+                className={c.newLock.allDay ? '' : 'is-on'}
+                aria-pressed={!c.newLock.allDay}
+                onClick={() => onChange({ newLock: { ...c.newLock, allDay: false } })}
+              >
+                Some hours
+              </button>
+            </div>
+            {!c.newLock.allDay && (
+              <HoursPicker
+                from={c.newLock.from}
+                until={c.newLock.until}
+                labels={['Locked from', 'Locked until']}
+                bad="The end must be after the start"
+                onChange={(p) => onChange({ newLock: { ...c.newLock, ...p } })}
+              />
+            )}
+            {days.length > 1 && (
+              <button
+                type="button"
+                className="rd-btn rd-btn--quiet rd-btn--sm"
+                onClick={() =>
+                  withLocks([
+                    ...c.unavailable.filter((t) => t.date < today),
+                    ...days.map((iso) => ({ date: iso, ...newHours() })),
+                  ])
+                }
+              >
+                Apply to all days
+              </button>
+            )}
+          </div>
+          {days.length === 0 ? (
+            <p className="rd-empty-note">
+              Nothing locked — click the days you aren’t available. The website then hides those dates or hours.
+            </p>
+          ) : (
+            <ul className="sch-datelist sch-locklist">
+              {days.map((iso) => {
+                const list = locks.get(iso) || [];
+                const allDay = list.some(isAllDay);
+                const hit = (booked[iso] || []).filter((h) => isLockedAt(list, h)).sort();
+                return (
+                  <li key={iso}>
+                    <span className="sch-datelist__date">{longDate(iso)}</span>
+                    <div className="sch-lock__body">
+                      <select
+                        className="rd-input rd-input--sm"
+                        value={allDay ? 'all' : 'hours'}
+                        aria-label={`How ${longDate(iso)} is locked`}
+                        onChange={(e) =>
+                          setDay(
+                            iso,
+                            e.target.value === 'all'
+                              ? [{ ...ALL_DAY }]
+                              : [{ from: c.newLock.from, until: c.newLock.until }]
+                          )
+                        }
+                      >
+                        <option value="all">Locked all day</option>
+                        <option value="hours">Some hours locked</option>
+                      </select>
+                      {!allDay && (
+                        <div className="sch-lock__ranges">
+                          {list.map((t, i) => (
+                            <span className="sch-lock__range" key={i}>
+                              <HoursPicker
+                                from={t.from}
+                                until={t.until}
+                                labels={['Locked from', 'Locked until']}
+                                bad="The end must be after the start"
+                                onChange={(p) => setDay(iso, list.map((x, k) => (k === i ? { ...x, ...p } : x)))}
+                              />
+                              {list.length > 1 && (
+                                <button
+                                  type="button"
+                                  className="rd-btn rd-btn--quiet rd-btn--sm rd-btn--icon"
+                                  aria-label={`Remove ${t.from} to ${t.until}`}
+                                  title="Remove these hours"
+                                  onClick={() => setDay(iso, list.filter((_, k) => k !== i))}
+                                >
+                                  <X size={14} />
+                                </button>
+                              )}
+                            </span>
+                          ))}
+                          <button type="button" className="rd-btn rd-btn--quiet rd-btn--sm" onClick={() => addHours(iso)}>
+                            <Plus size={14} /> Add hours
+                          </button>
+                        </div>
+                      )}
+                      {hit.length > 0 && (
+                        <span className="sch-warn">
+                          <AlertTriangle size={14} />
+                          Already booked at {hit.join(', ')}: locking doesn’t cancel{' '}
+                          {hit.length === 1 ? 'it' : 'them'}.
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className="rd-btn rd-btn--quiet rd-btn--sm rd-btn--icon"
+                      aria-label={`Unlock ${longDate(iso)}`}
+                      title="Unlock this day"
+                      onClick={() => unlock(iso)}
+                    >
+                      <X size={15} />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <p className="rd-hint">Click a day to lock or unlock it · Shift-click a second day to lock every day in between.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** One appointment country: lock, booking days (weekly or its own dates), locked dates & hours, name / cities. */
 function CountryCard({
   c,
   first,
   canRemove,
-  marked,
+  booked,
   onChange,
   onRemove,
 }: {
   c: Draft;
   first: boolean;
   canRemove: boolean;
-  marked: Set<string>;
+  booked: Record<string, string[]>; // upcoming appointments in this country: date → start times
   onChange: (patch: Partial<Draft>) => void;
   onRemove: () => void;
 }) {
   const today = todayISO();
   const upcoming = c.dates.filter((d) => d.date >= today);
   const picked = useMemo(() => new Set(c.dates.map((d) => d.date)), [c.dates]);
+  const marked = useMemo(() => new Set(Object.keys(booked)), [booked]);
+  const lockedDays = new Set(c.unavailable.filter((t) => t.date >= today).map((t) => t.date)).size;
   const cityCount = textToCities(c.citiesText).length;
   const label = c.name.trim() || 'this country';
 
-  const withDates = (dates: CountryDate[]) => onChange({ dates: dates.sort((a, b) => a.date.localeCompare(b.date)) });
+  const withDates = (dates: CountryDate[]) => onChange({ dates: sortByDate(dates) });
   const add = (isos: string[]) => {
     const extra = isos.filter((iso) => iso >= today && !picked.has(iso)).map((iso) => ({ date: iso, ...c.newHours }));
     if (extra.length) withDates([...c.dates, ...extra]);
@@ -273,6 +552,7 @@ function CountryCard({
             <p className="rd-card__sub">
               {c.timeZone} · {cityCount} {cityCount === 1 ? 'city' : 'cities'}
               {c.mode === 'dates' ? ` · ${upcoming.length} upcoming date${upcoming.length === 1 ? '' : 's'}` : ''}
+              {lockedDays ? ` · ${lockedDays} locked day${lockedDays === 1 ? '' : 's'}` : ''}
             </p>
           </div>
         </div>
@@ -389,6 +669,8 @@ function CountryCard({
         </div>
       )}
 
+      <LockedTimes c={c} booked={booked} onChange={onChange} />
+
       <details className="rd-details" open={c.fresh || undefined}>
         <summary>
           <ChevronRight size={15} /> Name, time zone &amp; cities
@@ -492,12 +774,14 @@ export default function BookingSchedulePage() {
         .sort((a, b) => `${a.date} ${a.hour}`.localeCompare(`${b.date} ${b.hour}`)),
     [orders, today]
   );
-  // Days with appointments, per country (dots in each country's calendar)
-  const bookedDays = useMemo(() => {
-    const out: Record<string, Set<string>> = {};
+  // Start times of the upcoming appointments, per country and day (the dots in
+  // each country's calendars, and the warning on a locked time that is booked)
+  const bookedHours = useMemo(() => {
+    const out: Record<string, Record<string, string[]>> = {};
     upcoming.forEach((o) => {
-      if (!out[o.country]) out[o.country] = new Set();
-      out[o.country].add(o.date);
+      if (!out[o.country]) out[o.country] = {};
+      if (!out[o.country][o.date]) out[o.country][o.date] = [];
+      out[o.country][o.date].push(o.hour);
     });
     return out;
   }, [upcoming]);
@@ -511,10 +795,12 @@ export default function BookingSchedulePage() {
   }
 
   const save = async () => {
-    const countries = s.countries.map(({ uid, citiesText, fresh, newHours, ...c }) => ({
+    const countries = s.countries.map(({ uid, citiesText, fresh, newHours, newLock, ...c }) => ({
       ...c,
       cities: textToCities(citiesText),
-      dates: c.dates.filter((d) => d.date >= today), // past dates are no use any more
+      // past dates are no use any more
+      dates: c.dates.filter((d) => d.date >= today),
+      unavailable: c.unavailable.filter((t) => t.date >= today),
     }));
     const empty = countries.find((c) => !c.name.trim() || c.cities.length === 0);
     if (empty) {
@@ -529,6 +815,15 @@ export default function BookingSchedulePage() {
       .find(({ d }) => d.from >= d.until);
     if (badDay) {
       return setMsg({ text: `${badDay.c.name}, ${longDate(badDay.d.date)}: the closing time must be after the opening time.`, error: true });
+    }
+    const badLock = countries
+      .flatMap((c) => c.unavailable.map((t) => ({ c, t })))
+      .find(({ t }) => t.from >= t.until);
+    if (badLock) {
+      return setMsg({
+        text: `${badLock.c.name}, ${longDate(badLock.t.date)}: the locked hours must end after they start.`,
+        error: true,
+      });
     }
     setSaving(true);
     setMsg(null);
@@ -606,7 +901,8 @@ export default function BookingSchedulePage() {
             type="button"
             className="rd-btn rd-btn--ghost rd-btn--sm"
             onClick={() => {
-              if (!window.confirm('Go back to Lebanon, KSA and Kuwait with their default cities, open every day?')) return;
+              if (!window.confirm('Go back to Lebanon, KSA and Kuwait with their default cities, open every day with nothing locked?'))
+                return;
               update((p) => ({ ...p, countries: DEFAULT_COUNTRIES.map((c) => toDraft(c)) }));
             }}
           >
@@ -638,7 +934,7 @@ export default function BookingSchedulePage() {
           c={c}
           first={i === 0}
           canRemove={s.countries.length > 1}
-          marked={bookedDays[c.name] || new Set()}
+          booked={bookedHours[c.name] || NO_BOOKINGS}
           onChange={(patch) => setCountry(c.uid, patch)}
           onRemove={() => {
             if (!window.confirm(`Remove ${c.name.trim() || 'this country'}? Clients will no longer be able to book it.`)) return;

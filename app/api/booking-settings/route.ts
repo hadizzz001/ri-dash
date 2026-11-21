@@ -5,9 +5,10 @@ import { normalizeSettings } from "../../utils/bookingSchedule";
 export const dynamic = "force-dynamic";
 
 /**
- * The online booking schedule (countries, weekly days & hours, specific
- * dates). One document in the BookingSettings collection, read by the
- * website; absent = the defaults (every day open 08:00–24:00, Lebanon / KSA / Kuwait).
+ * The online booking schedule (countries with their locked dates & hours,
+ * weekly days & hours, specific dates). One document in the BookingSettings
+ * collection, read by the website; absent = the defaults (every day open
+ * 08:00–24:00, Lebanon / KSA / Kuwait).
  */
 async function readRaw() {
   const res: any = await prisma.$runCommandRaw({ find: "BookingSettings", filter: {}, limit: 1 });
@@ -38,6 +39,14 @@ export async function PUT(req: Request) {
       if (bad) {
         return NextResponse.json(
           { error: `${c.name}, ${bad.date}: the closing time must be after the opening time.` },
+          { status: 400 }
+        );
+      }
+      // Locked hours: each one has to end after it starts
+      const badLock = c.unavailable.find((t) => t.from >= t.until);
+      if (badLock) {
+        return NextResponse.json(
+          { error: `${c.name}, ${badLock.date}: the locked hours must end after they start.` },
           { status: 400 }
         );
       }
